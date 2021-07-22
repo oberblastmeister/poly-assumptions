@@ -23,7 +23,31 @@ dependencies:
 - base >= 4.7 && < 5
 - array # need for happy
 - containers
+- dlist
 - text
+- mtl
+- transformers
+- enummapset
+- microlens
+- microlens-th
+
+default-extensions:
+- FlexibleInstances
+- FlexibleContexts
+- InstanceSigs
+- MultiParamTypeClasses
+- GeneralizedNewtypeDeriving
+- OverloadedStrings
+- ConstraintKinds
+- LambdaCase
+
+- TemplateHaskell
+
+ghc-options:
+  - -Wall
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wredundant-constraints
 
 build-tools:
   - alex

@@ -3,8 +3,8 @@ module Lexer (
   scanTokens
 ) where
 
-import qualified Token as Tok
-import Token (Token)
+import qualified Syntax.Token as Tok
+import Syntax.Token (Token)
 }
 
 %wrapper "basic"

@@ -7,8 +7,8 @@ module Parser (
 import Lexer
 import Syntax.Expr (Expr)
 import qualified Syntax.Expr as Expr
-import Token (Token)
-import qualified Token as Tok
+import Syntax.Token (Token)
+import qualified Syntax.Token as Tok
 }
 
 -- -- Entry point

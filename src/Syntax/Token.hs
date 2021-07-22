@@ -1,4 +1,4 @@
-module Token where
+module Syntax.Token where
 
 import Data.Text (Text)
 
