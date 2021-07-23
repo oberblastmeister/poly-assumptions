@@ -1,5 +1,6 @@
 module Types.Infer.Monad
   ( MonadInfer,
+    InferState (..),
     Infer,
     runInfer,
     TypeError (..),
@@ -28,6 +29,7 @@ import Data.Sequence (Seq)
 import Data.Text (Text)
 import Lens.Micro ((%~))
 import Lens.Micro.TH
+import Protolude
 import Types.Assumptions (Assumptions)
 import qualified Types.Assumptions as Assumptions
 import Types.Type (Type)
@@ -63,8 +65,9 @@ data TypeError
 
 data Constraint
   = ConEqual Type Type
-  | ConExplInst Type T.Scheme
-  | ConImplInst Type (EnumSet T.Var) Type
+  | ConExplicit Type T.Scheme
+  | ConImplicit Type (EnumSet T.Var) Type
+  deriving (Show, Eq)
 
 makeLenses 'InferState
 
@@ -83,12 +86,12 @@ defInferState = InferState {_assumptions = Assumptions.empty, _constraints = DL.
 runInfer :: MonadError TypeError m => Infer a -> m (a, InferState)
 runInfer m =
   liftEither $
-    evalSupplyT
-      ( runStateT
-          (runReaderT m EnumSet.empty)
-          defInferState
-      )
-      varSupply
+      evalSupplyT
+        ( runStateT
+            (runReaderT m EnumSet.empty)
+            defInferState
+        )
+        varSupply
 
 addConstraints :: MonadState InferState m => [Constraint] -> m ()
 addConstraints cs =

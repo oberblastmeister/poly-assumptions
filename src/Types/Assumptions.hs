@@ -10,32 +10,36 @@ module Types.Assumptions
   )
 where
 
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HMap
+import Data.HashSet (HashSet)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
-import Data.Text (Text)
+import Protolude
 import Types.Type (Type)
 import Prelude hiding (lookup)
 
-newtype Assumptions = Assumptions (Seq (Text, Type))
-  deriving (Eq)
+newtype Assumptions = Assumptions (HashMap Text (Seq Type))
 
 empty :: Assumptions
-empty = Assumptions Seq.empty
+empty = Assumptions HMap.empty
 
 remove :: Assumptions -> Text -> Assumptions
-remove (Assumptions as) var = Assumptions (Seq.filter (\(n, _) -> n /= var) as)
+remove (Assumptions m) var = Assumptions $ HMap.delete var m
 
 lookup :: Text -> Assumptions -> Seq Type
-lookup key (Assumptions as) = snd <$> Seq.filter (\(n, _) -> n == key) as
+lookup key (Assumptions m) = HMap.lookup key m |> fromMaybe Seq.empty
 
 add :: Assumptions -> (Text, Type) -> Assumptions
-add (Assumptions as) a = Assumptions $ as Seq.|> a
+add (Assumptions m) (n, t) = HMap.insert n (ts Seq.|> t) m |> Assumptions
+  where
+    ts = HMap.lookupDefault Seq.empty n m
 
 merge :: Assumptions -> Assumptions -> Assumptions
 merge (Assumptions as) (Assumptions as') = Assumptions $ as <> as'
 
 singleton :: Text -> Type -> Assumptions
-singleton x y = Assumptions $ Seq.singleton (x, y)
+singleton x y = Assumptions $ HMap.singleton x (Seq.singleton y)
 
-keys :: Assumptions -> Seq Text
-keys (Assumptions as) = fst <$> as
+keys :: Assumptions -> HashSet Text
+keys (Assumptions m) = HMap.keysSet m

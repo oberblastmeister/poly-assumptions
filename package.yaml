@@ -23,6 +23,8 @@ dependencies:
 - base >= 4.7 && < 5
 - array # need for happy
 - containers
+- unordered-containers
+- hashable
 - dlist
 - text
 - mtl

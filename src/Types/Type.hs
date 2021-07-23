@@ -10,17 +10,18 @@ module Types.Type
   )
 where
 
+import Prelude hiding (Type)
 import Data.EnumSet (EnumSet)
 import Data.Text (Text)
 
 newtype Var = VarId {unVarId :: Int}
-  deriving (Eq, Enum)
+  deriving (Show, Eq, Enum)
 
 data Type
   = Con Text
   | Var Var
   | Type :-> Type
-  deriving (Eq)
+  deriving (Show, Eq)
 
 infixr 9 :->
 
@@ -38,7 +39,7 @@ everything (<>.) f = go
 
 data Scheme
   = Forall (EnumSet Var) Type
-  deriving (Eq)
+  deriving (Show, Eq)
 
 -- smart constructors
 var :: Int -> Type

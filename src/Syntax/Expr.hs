@@ -5,7 +5,7 @@ module Syntax.Expr
   )
 where
 
-import Data.Text (Text)
+import Protolude
 
 type Name = Text
 

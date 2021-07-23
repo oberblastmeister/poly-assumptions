@@ -3,8 +3,10 @@ module Lexer (
   scanTokens
 ) where
 
+import Protolude
 import qualified Syntax.Token as Tok
 import Syntax.Token (Token)
+import Data.Maybe (fromJust)
 }
 
 %wrapper "basic"

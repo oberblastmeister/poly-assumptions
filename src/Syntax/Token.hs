@@ -1,6 +1,6 @@
 module Syntax.Token where
 
-import Data.Text (Text)
+import Protolude
 
 data Token
   = Let

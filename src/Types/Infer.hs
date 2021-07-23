@@ -1,11 +1,30 @@
 module Types.Infer where
 
+import Control.Monad.Except
+import qualified Data.DList as DL
+import qualified Data.EnumSet as ESet
 import Data.Foldable (toList)
+import qualified Data.HashSet as HSet
+import Protolude
 import Syntax.Expr (Expr)
 import qualified Syntax.Expr as Expr
+import qualified Types.Assumptions as As
 import Types.Infer.Monad
+import qualified Types.Solve as Solve
+import Types.Subst (Subst, Substitutable ((@@)))
 import Types.Type (Type)
 import qualified Types.Type as T
+
+res :: Expr -> Either TypeError (Type, InferState)
+res ex = runInfer $ infer ex
+
+inferType :: MonadError TypeError m => Expr -> m (Subst, Type)
+inferType ex = do
+  (t, st) <- runInfer $ infer ex
+  let unbounds = As.keys $ _assumptions st
+  unless (HSet.null unbounds) $ throwError $ UnboundVariable (HSet.toList unbounds |> head)
+  subst <- Solve.solve (DL.toList $ _constraints st)
+  return (subst, subst @@ t)
 
 infer :: MonadInfer m => Expr -> m Type
 infer expr = case expr of
@@ -33,7 +52,7 @@ infer expr = case expr of
     t2 <- infer e2
     ms <- getMSet
     ts <- toList <$> lookupAssumptions x
-    addConstraints $ [ConImplInst t' ms t1 | t' <- ts]
+    addConstraints $ [ConImplicit t' ms t1 | t' <- ts]
     return t2
   Expr.Bin e1 op e2 -> do
     t1 <- infer e1

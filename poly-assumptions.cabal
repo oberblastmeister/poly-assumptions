@@ -28,11 +28,13 @@ library
       Control.Monad.Supply
       Lexer
       Parser
+      Protolude
       Syntax.Expr
       Syntax.Token
       Types.Assumptions
       Types.Infer
       Types.Infer.Monad
+      Types.Solve
       Types.Subst
       Types.Type
       Types.Unify
@@ -60,11 +62,13 @@ library
     , containers
     , dlist
     , enummapset
+    , hashable
     , microlens
     , microlens-th
     , mtl
     , text
     , transformers
+    , unordered-containers
   default-language: Haskell2010
 
 executable poly-assumptions-exe
@@ -93,12 +97,14 @@ executable poly-assumptions-exe
     , containers
     , dlist
     , enummapset
+    , hashable
     , microlens
     , microlens-th
     , mtl
     , poly-assumptions
     , text
     , transformers
+    , unordered-containers
   default-language: Haskell2010
 
 test-suite poly-assumptions-test
@@ -128,6 +134,7 @@ test-suite poly-assumptions-test
     , containers
     , dlist
     , enummapset
+    , hashable
     , hspec
     , microlens
     , microlens-th
@@ -135,4 +142,5 @@ test-suite poly-assumptions-test
     , poly-assumptions
     , text
     , transformers
+    , unordered-containers
   default-language: Haskell2010
