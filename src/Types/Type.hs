@@ -29,9 +29,9 @@ isArr (_ :-> _) = True
 isArr _ = False
 
 instance Pretty Type where
-  pretty = \case
-    Con n -> pretty n
-    Var n -> pretty n
+  pretty x = case x of
+    Con name -> pretty name
+    Var name -> pretty name
     t1 :-> t2 -> parensIfArr t1 <+> "->" <+> pretty t2
     where
       parensIfArr t = parensIf (isArr t) (pretty t)

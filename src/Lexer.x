@@ -5,6 +5,7 @@ module Lexer (
 
 import Protolude
 import qualified Syntax.Token as Tok
+import qualified Data.Text as T
 import Syntax.Token (Token)
 import Data.Maybe (fromJust)
 }
@@ -12,8 +13,13 @@ import Data.Maybe (fromJust)
 %wrapper "basic"
 
 $digit = 0-9
-$alpha = [a-zA-Z]
+$lower = [a-z]
+$upper = [A-Z]
+$ident = [$digit $upper $lower '_' '\'']
 $eol = [\n]
+-- we put this separate because alex doesn't do string escapes like haskell
+-- inside literal strings which is confusing but it does in regex
+$lam = [\\]
 
 tokens :-
   $eol;
@@ -27,15 +33,18 @@ tokens :-
   "False" { tok Tok.False }
   $digit+ { string $ Tok.Num . read }
   "->" { tok Tok.Arrow }
-  '=' { tok Tok.Eq }
-  "\\" { tok Tok.Lambda }
-  '+' { tok Tok.Add }
-  '-' { tok Tok.Sub }
-  '*' { tok Tok.Mul }
-  '/' { tok Tok.Div }
+  "=" { tok Tok.Eq }
+  $lam { tok Tok.Lambda }
+  "+" { tok Tok.Add }
+  "-" { tok Tok.Sub }
+  "*" { tok Tok.Mul }
+  "/" { tok Tok.Div }
   "(" { tok Tok.LParen }
   ")" { tok Tok.RParen }
-  '.' { tok Tok.Dot }
+  "." { tok Tok.Dot }
+
+  $lower $ident* { string $ Tok.Ident . T.pack }
+  $upper $ident* { string $ Tok.ConIdent . T.pack }
 
 {
 tok :: Token -> String -> Token
@@ -49,7 +58,7 @@ scanTokens str = go ('\n',[],str) where
   go inp@(_,_bs,str) =
     case alexScan inp 0 of
      AlexEOF -> return []
-     AlexError _ -> Left "Invalid lexeme."
+     AlexError t -> Left $ "Invalid lexeme: " ++ show t
      AlexSkip  inp' len -> go inp'
      AlexToken inp' len act -> do
       res <- go inp'

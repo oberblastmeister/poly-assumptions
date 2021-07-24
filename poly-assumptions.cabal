@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Control.Monad.Supply
+      Data.Either.Combinators
       Lexer
       Parser
       Pretty
@@ -52,6 +53,8 @@ library
       OverloadedStrings
       ConstraintKinds
       LambdaCase
+      EmptyCase
+      BangPatterns
       TemplateHaskell
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-tools:
@@ -89,6 +92,8 @@ executable poly-assumptions-exe
       OverloadedStrings
       ConstraintKinds
       LambdaCase
+      EmptyCase
+      BangPatterns
       TemplateHaskell
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:
@@ -116,6 +121,9 @@ test-suite poly-assumptions-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      InferSpec
+      ParserSpec
+      PrettySpec
       Paths_poly_assumptions
   hs-source-dirs:
       test
@@ -128,6 +136,8 @@ test-suite poly-assumptions-test
       OverloadedStrings
       ConstraintKinds
       LambdaCase
+      EmptyCase
+      BangPatterns
       TemplateHaskell
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:

@@ -1,6 +1,8 @@
 {
 module Parser (
   parseExpr,
+  parseType,
+  parseScheme,
   parseTokens,
 ) where
 
@@ -30,6 +32,7 @@ import qualified Syntax.Token as Tok
     in { Tok.In }
     num { Tok.Num $$ }
     ident { Tok.Ident $$ }
+    con_ident { Tok.ConIdent $$ }
     '\\' { Tok.Lambda }
     '->' { Tok.Arrow }
     '=' { Tok.Eq }
@@ -45,7 +48,7 @@ import qualified Syntax.Token as Tok
 
 Expr
   : AddExpr { $1 }
-  | let ident '=' Expr in Expr { Expr.App (Expr.Lam $2 $6) $4 }
+  | let ident '=' Expr in Expr { Expr.Let $2 $4 $6 }
   | '\\' ident '->' Expr { Expr.Lam $2 $4 }
 
 AddExpr
@@ -77,7 +80,7 @@ ArrowType
 
 AtomType
   : '(' Ty ')' { $2 }
-  | ident { T.Con $1 }
+  | con_ident { T.Con $1 }
 
 -- | A non-empty list with no separator
 ListE1(p)
@@ -85,7 +88,7 @@ ListE1(p)
      | p ListE1(p)      { $1 : $2 }
 {
 parseError :: [Token] -> Either String a
-parseError (l:ls) = Left (show l)
+parseError (l:ls) = Left $ "Unexpected token: " ++ show l
 parseError [] = Left "Unexpected end of Input"
 
 type Lexer = String -> Either String [Token]

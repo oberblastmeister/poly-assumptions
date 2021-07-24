@@ -11,6 +11,7 @@ data Token
   | Lambda
   | Num Int
   | Ident Text
+  | ConIdent Text
   | Arrow
   | Eq
   | Add

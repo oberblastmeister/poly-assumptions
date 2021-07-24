@@ -19,6 +19,7 @@ data Expr
   | Lit Lit
   | Bin Expr BinOp Expr
   | If Expr Expr Expr
+  deriving (Show, Eq)
 
 prettyWith :: Bool -> Expr -> Doc ann
 prettyWith nest = \case
@@ -40,6 +41,7 @@ data BinOp
   | Div
   | Eq
   | NEq
+  deriving (Show, Eq)
 
 instance Pretty BinOp where
   pretty = \case
@@ -53,6 +55,7 @@ instance Pretty BinOp where
 data Lit
   = LInt Int
   | LBool Bool
+  deriving (Show, Eq)
 
 instance Pretty Lit where
   pretty (LInt i) = pretty i
