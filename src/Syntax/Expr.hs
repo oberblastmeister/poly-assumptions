@@ -1,10 +1,12 @@
 module Syntax.Expr
   ( Expr (..),
     Lit (..),
-    BinOp(..)
+    BinOp (..),
   )
 where
 
+import Pretty
+import Prettyprinter (Doc, Pretty, pretty, (<+>))
 import Protolude
 
 type Name = Text
@@ -18,6 +20,19 @@ data Expr
   | Bin Expr BinOp Expr
   | If Expr Expr Expr
 
+prettyWith :: Bool -> Expr -> Doc ann
+prettyWith nest = \case
+  Lam x e -> parensIf nest ("\\" <> pretty x <+> "->" <+> pretty e)
+  Let x e1 e2 -> "let" <+> pretty x <+> "=" <+> pretty e1 <+> "in" <+> pretty e2
+  App e1 e2 -> prettyWith True e1 <+> prettyWith True e2
+  Var x -> pretty x
+  Lit l -> pretty l
+  Bin e1 op e2 -> pretty e1 <+> pretty op <+> pretty e2
+  If cond e1 e2 -> "if" <+> pretty cond <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
+
+instance Pretty Expr where
+  pretty = prettyWith False
+
 data BinOp
   = Add
   | Sub
@@ -26,6 +41,19 @@ data BinOp
   | Eq
   | NEq
 
+instance Pretty BinOp where
+  pretty = \case
+    Add -> "+"
+    Sub -> "-"
+    Mul -> "*"
+    Div -> "/"
+    Eq -> "=="
+    NEq -> "!="
+
 data Lit
   = LInt Int
   | LBool Bool
+
+instance Pretty Lit where
+  pretty (LInt i) = pretty i
+  pretty (LBool b) = pretty b

@@ -14,6 +14,7 @@ module Types.Infer.Monad
     freshT,
     getMSet,
     withMVar,
+    varSupply,
   )
 where
 
@@ -26,7 +27,6 @@ import qualified Data.DList as DL
 import Data.EnumSet (EnumSet)
 import qualified Data.EnumSet as EnumSet
 import Data.Sequence (Seq)
-import Data.Text (Text)
 import Lens.Micro ((%~))
 import Lens.Micro.TH
 import Protolude
@@ -86,12 +86,12 @@ defInferState = InferState {_assumptions = Assumptions.empty, _constraints = DL.
 runInfer :: MonadError TypeError m => Infer a -> m (a, InferState)
 runInfer m =
   liftEither $
-      evalSupplyT
-        ( runStateT
-            (runReaderT m EnumSet.empty)
-            defInferState
-        )
-        varSupply
+    evalSupplyT
+      ( runStateT
+          (runReaderT m EnumSet.empty)
+          defInferState
+      )
+      varSupply
 
 addConstraints :: MonadState InferState m => [Constraint] -> m ()
 addConstraints cs =

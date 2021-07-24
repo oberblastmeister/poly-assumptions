@@ -28,6 +28,7 @@ library
       Control.Monad.Supply
       Lexer
       Parser
+      Pretty
       Protolude
       Syntax.Expr
       Syntax.Token
@@ -63,9 +64,11 @@ library
     , dlist
     , enummapset
     , hashable
+    , haskeline
     , microlens
     , microlens-th
     , mtl
+    , prettyprinter
     , text
     , transformers
     , unordered-containers
@@ -98,10 +101,12 @@ executable poly-assumptions-exe
     , dlist
     , enummapset
     , hashable
+    , haskeline
     , microlens
     , microlens-th
     , mtl
     , poly-assumptions
+    , prettyprinter
     , text
     , transformers
     , unordered-containers
@@ -135,11 +140,13 @@ test-suite poly-assumptions-test
     , dlist
     , enummapset
     , hashable
+    , haskeline
     , hspec
     , microlens
     , microlens-th
     , mtl
     , poly-assumptions
+    , prettyprinter
     , text
     , transformers
     , unordered-containers

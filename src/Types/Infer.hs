@@ -1,6 +1,8 @@
 module Types.Infer where
 
+import Control.Arrow (second)
 import Control.Monad.Except
+import Control.Monad.Supply
 import qualified Data.DList as DL
 import qualified Data.EnumSet as ESet
 import Data.Foldable (toList)
@@ -12,19 +14,30 @@ import qualified Types.Assumptions as As
 import Types.Infer.Monad
 import qualified Types.Solve as Solve
 import Types.Subst (Subst, Substitutable ((@@)))
+import qualified Types.Subst as Subst
 import Types.Type (Type)
 import qualified Types.Type as T
 
-res :: Expr -> Either TypeError (Type, InferState)
-res ex = runInfer $ infer ex
+inferExpr :: (MonadError TypeError m, MonadSupply T.Var m) => Expr -> m T.Scheme
+inferExpr = (\(_, t) -> return $ closeOver t) <=< inferType
 
-inferType :: MonadError TypeError m => Expr -> m (Subst, Type)
+inferType :: (MonadError TypeError m, MonadSupply T.Var m) => Expr -> m (Subst, Type)
 inferType ex = do
   (t, st) <- runInfer $ infer ex
   let unbounds = As.keys $ _assumptions st
   unless (HSet.null unbounds) $ throwError $ UnboundVariable (HSet.toList unbounds |> head)
   subst <- Solve.solve (DL.toList $ _constraints st)
   return (subst, subst @@ t)
+
+closeOver :: Type -> T.Scheme
+closeOver = normalize . Solve.generalize ESet.empty
+
+normalize :: T.Scheme -> T.Scheme
+normalize (T.Forall as t) = T.Forall as' (s @@ t)
+  where
+    zipped = zip as varSupply
+    as' = snd <$> zipped
+    s = Subst.fromList (second T.Var <$> zipped)
 
 infer :: MonadInfer m => Expr -> m Type
 infer expr = case expr of

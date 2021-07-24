@@ -10,18 +10,31 @@ module Types.Type
   )
 where
 
-import Prelude hiding (Type)
 import Data.EnumSet (EnumSet)
 import Data.Text (Text)
+import Pretty (parensIf)
+import Prettyprinter (Pretty, pretty, (<+>))
 
 newtype Var = VarId {unVarId :: Int}
-  deriving (Show, Eq, Enum)
+  deriving (Show, Eq, Enum, Pretty)
 
 data Type
   = Con Text
   | Var Var
   | Type :-> Type
   deriving (Show, Eq)
+
+isArr :: Type -> Bool
+isArr (_ :-> _) = True
+isArr _ = False
+
+instance Pretty Type where
+  pretty = \case
+    Con n -> pretty n
+    Var n -> pretty n
+    t1 :-> t2 -> parensIfArr t1 <+> "->" <+> pretty t2
+    where
+      parensIfArr t = parensIf (isArr t) (pretty t)
 
 infixr 9 :->
 
@@ -38,8 +51,11 @@ everything (<>.) f = go
     go other = f other
 
 data Scheme
-  = Forall (EnumSet Var) Type
+  = Forall [Var] Type
   deriving (Show, Eq)
+
+instance Pretty Scheme where
+  pretty (Forall as t) = "forall" <+> pretty as <> "." <+> pretty t
 
 -- smart constructors
 var :: Int -> Type

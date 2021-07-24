@@ -31,7 +31,7 @@ instance Substitutable Type where
 instance Substitutable T.Scheme where
   (Subst s) @@ (T.Forall as t) = T.Forall as $ s' @@ t
     where
-      s' = Subst $ foldr EMap.delete s (ESet.toList as)
+      s' = Subst $ foldr EMap.delete s as
 
 instance Semigroup Subst where
   (<>) = compose
@@ -64,7 +64,7 @@ instance FreeTypeVars Type where
       )
 
 instance FreeTypeVars T.Scheme where
-  ftv (T.Forall as t) = ftv t `ESet.difference` as
+  ftv (T.Forall as t) = ftv t `ESet.difference` ESet.fromList as
 
 class ActiveTypeVars a where
   atv :: a -> EnumSet T.Var
@@ -86,6 +86,9 @@ instance ActiveTypeVars a => ActiveTypeVars [a] where
 compose :: Subst -> Subst -> Subst
 su1@(Subst s1) `compose` su2@(Subst _) =
   let (Subst s3) = su1 @@ su2 in Subst (s3 `EMap.union` s1)
+
+fromList :: [(T.Var, Type)] -> Subst
+fromList = Subst . EMap.fromList
 
 empty :: Subst
 empty = Subst EMap.empty

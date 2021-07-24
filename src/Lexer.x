@@ -20,6 +20,7 @@ tokens :-
   $white+;
   "--".*;
 
+  "forall" { tok Tok.Forall }
   "let" { tok Tok.Let }
   "in" { tok Tok.In }
   "True" { tok Tok.True }
@@ -34,6 +35,7 @@ tokens :-
   '/' { tok Tok.Div }
   "(" { tok Tok.LParen }
   ")" { tok Tok.RParen }
+  '.' { tok Tok.Dot }
 
 {
 tok :: Token -> String -> Token

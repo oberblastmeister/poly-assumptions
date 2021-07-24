@@ -32,6 +32,8 @@ dependencies:
 - enummapset
 - microlens
 - microlens-th
+- prettyprinter
+- haskeline
 
 default-extensions:
 - FlexibleInstances

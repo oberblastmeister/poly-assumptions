@@ -4,6 +4,7 @@ import Protolude
 
 data Token
   = Let
+  | Forall
   | True
   | False
   | In
@@ -18,4 +19,5 @@ data Token
   | Div
   | LParen
   | RParen
+  | Dot
   deriving (Show, Eq)
