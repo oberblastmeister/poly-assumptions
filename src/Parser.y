@@ -27,6 +27,7 @@ import qualified Syntax.Token as Tok
 %token
     forall { Tok.Forall }
     let { Tok.Let }
+    rec { Tok.Rec }
     true { Tok.True }
     false { Tok.False }
     in { Tok.In }
@@ -48,8 +49,9 @@ import qualified Syntax.Token as Tok
 
 Expr
   : AddExpr { $1 }
-  | let ident '=' Expr in Expr { Expr.Let $2 $4 $6 }
-  | '\\' ident '->' Expr { Expr.Lam $2 $4 }
+  | let ident '=' Expr in Expr { Expr.Let Expr.NonRec $2 $4 $6 }
+  | let rec ident '=' Expr in Expr { Expr.Let Expr.Rec $3 $5 $7 }
+  | '\\' ListE1(ident) '->' Expr { foldr Expr.Lam $4 $2 }
 
 AddExpr
   : MulExpr { $1 }
@@ -57,9 +59,13 @@ AddExpr
   | AddExpr '-' MulExpr { Expr.Bin $1 Expr.Sub $3 }
 
 MulExpr
+  : AppExpr { $1 }
+  | MulExpr '*' AppExpr { Expr.Bin $1 Expr.Mul $3 }
+  | MulExpr '/' AppExpr { Expr.Bin $1 Expr.Div $3 }
+
+AppExpr
   : AtomExpr { $1 }
-  | MulExpr '*' AtomExpr { Expr.Bin $1 Expr.Mul $3 }
-  | MulExpr '/' AtomExpr { Expr.Bin $1 Expr.Div $3 }
+  | AppExpr AtomExpr { Expr.App $1 $2 }
 
 AtomExpr
   : '(' Expr ')' { $2 }

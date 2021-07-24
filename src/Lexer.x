@@ -28,6 +28,7 @@ tokens :-
 
   "forall" { tok Tok.Forall }
   "let" { tok Tok.Let }
+  "rec" { tok Tok.Rec }
   "in" { tok Tok.In }
   "True" { tok Tok.True }
   "False" { tok Tok.False }

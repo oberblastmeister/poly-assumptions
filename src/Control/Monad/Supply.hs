@@ -31,20 +31,20 @@ newtype SupplyT s m a = SupplyT {unSupplyT :: StateT [s] m a}
 -- | The supply monad which is SupplyT specialized with the Maybe monad for the MonadFix instance.
 -- | This is because the supply might be finite so it can fail.
 -- | means in order to run this you will also have to unwrap the Maybe.
-newtype Supply s a = Supply (SupplyT s Maybe a)
+newtype Supply s a = Supply (SupplyT s Identity a)
   deriving (Functor, Applicative, Monad, MonadSupply s, MonadFix)
 
 evalSupplyT :: Monad m => SupplyT s m a -> [s] -> m a
 evalSupplyT (SupplyT s) = evalStateT s
 
-evalSupply :: Supply s a -> [s] -> Maybe a
-evalSupply (Supply s) = evalSupplyT s
+evalSupply :: Supply s a -> [s] -> a
+evalSupply (Supply s) = runIdentity . evalSupplyT s
 
-runSupplyT :: Monad m => SupplyT s m a -> [s] -> m (a, [s])
+runSupplyT :: SupplyT s m a -> [s] -> m (a, [s])
 runSupplyT (SupplyT s) = runStateT s
 
-runSupply :: Supply s a -> [s] -> Maybe (a, [s])
-runSupply (Supply s) = runSupplyT s
+runSupply :: Supply s a -> [s] -> (a, [s])
+runSupply (Supply s) = runIdentity . runSupplyT s
 
 instance MonadError e m => MonadError e (SupplyT s m) where
   throwError = lift . throwError

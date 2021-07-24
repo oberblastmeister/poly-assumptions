@@ -27,6 +27,8 @@ library
   exposed-modules:
       Control.Monad.Supply
       Data.Either.Combinators
+      Debugging
+      Desugar
       Lexer
       Parser
       Pretty
@@ -55,7 +57,12 @@ library
       LambdaCase
       EmptyCase
       BangPatterns
+      TypeApplications
+      StandaloneDeriving
+      ScopedTypeVariables
+      RankNTypes
       TemplateHaskell
+      PatternSynonyms
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-tools:
       alex
@@ -94,7 +101,12 @@ executable poly-assumptions-exe
       LambdaCase
       EmptyCase
       BangPatterns
+      TypeApplications
+      StandaloneDeriving
+      ScopedTypeVariables
+      RankNTypes
       TemplateHaskell
+      PatternSynonyms
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:
       alex
@@ -138,7 +150,12 @@ test-suite poly-assumptions-test
       LambdaCase
       EmptyCase
       BangPatterns
+      TypeApplications
+      StandaloneDeriving
+      ScopedTypeVariables
+      RankNTypes
       TemplateHaskell
+      PatternSynonyms
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:
       alex

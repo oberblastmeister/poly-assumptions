@@ -1,6 +1,8 @@
 module Types.Infer.Monad
   ( MonadInfer,
     InferState (..),
+    assumptions,
+    constraints,
     Infer,
     runInfer,
     TypeError (..),
@@ -12,9 +14,11 @@ module Types.Infer.Monad
     addAssumption,
     freshV,
     freshT,
-    getMSet,
     withMVar,
     varSupply,
+    defInferState,
+    takeState,
+    listenState,
   )
 where
 
@@ -27,7 +31,7 @@ import qualified Data.DList as DL
 import Data.EnumSet (EnumSet)
 import qualified Data.EnumSet as EnumSet
 import Data.Sequence (Seq)
-import Lens.Micro ((%~))
+import Lens.Micro ((%~), (&))
 import Lens.Micro.TH
 import Protolude
 import Types.Assumptions (Assumptions)
@@ -35,14 +39,13 @@ import qualified Types.Assumptions as Assumptions
 import Types.Type (Type)
 import qualified Types.Type as T
 
-type Infer a =
+type Infer =
   ( ReaderT
       (EnumSet T.Var)
       ( StateT
           InferState
           (SupplyT T.Var (Either TypeError))
       )
-      a
   )
 
 data InferState = InferState
@@ -84,7 +87,18 @@ freshT = T.Var <$> supply
 defInferState :: InferState
 defInferState = InferState {_assumptions = Assumptions.empty, _constraints = DL.empty}
 
-runInfer :: MonadError TypeError m => Infer a -> m (a, InferState)
+takeState :: (MonadState InferState m) => StateT InferState m a -> m (a, InferState)
+takeState m = do
+  curr <- get
+  runStateT m curr
+
+listenState :: (MonadState InferState m) => StateT InferState m a -> m (a, InferState)
+listenState m = do
+  (a, s) <- takeState m
+  put s
+  return (a, s)
+
+runInfer :: (MonadError TypeError m) => Infer a -> m (a, InferState)
 runInfer m =
   liftEither $
     evalSupplyT
@@ -94,17 +108,17 @@ runInfer m =
       )
       varSupply
 
-addConstraints :: MonadState InferState m => [Constraint] -> m ()
-addConstraints cs =
-  modify (constraints %~ (`DL.append` DL.fromList cs))
+addConstraints :: InferState -> [Constraint] -> InferState
+addConstraints st cs =
+  st & constraints %~ (`DL.append` DL.fromList cs)
 
 addConstraint :: MonadState InferState m => Constraint -> m ()
 addConstraint c =
   modify (constraints %~ (`DL.snoc` c))
 
-removeAssumptions :: MonadState InferState m => Text -> m ()
-removeAssumptions n =
-  modify (assumptions %~ (`Assumptions.remove` n))
+removeAssumptions :: InferState -> Text -> InferState
+removeAssumptions st n =
+  st & assumptions %~ (`Assumptions.remove` n)
 
 addAssumption :: MonadState InferState m => (Text, Type) -> m ()
 addAssumption a =
@@ -116,6 +130,3 @@ lookupAssumptions x = gets (Assumptions.lookup x . _assumptions)
 -- | have the monomorphic variable inside of the monomorphic set locally for this computation
 withMVar :: MonadReader (EnumSet T.Var) m => T.Var -> m a -> m a
 withMVar v = local (EnumSet.insert v)
-
-getMSet :: MonadReader (EnumSet T.Var) m => m (EnumSet T.Var)
-getMSet = ask

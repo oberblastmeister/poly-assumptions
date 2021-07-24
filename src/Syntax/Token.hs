@@ -4,6 +4,7 @@ import Protolude
 
 data Token
   = Let
+  | Rec
   | Forall
   | True
   | False

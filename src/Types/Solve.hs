@@ -48,4 +48,9 @@ nextSolvable xs = fromJust (find solvable chosen)
 solvable :: (Constraint, [Constraint]) -> Bool
 solvable (ConEqual {}, _) = True
 solvable (ConExplicit {}, _) = True
-solvable (c@(ConImplicit _t1 ms t2), cs) = error $ "uhoh, constraint `" ++ show c ++ "` wasn't solvable"
+solvable (c@(ConImplicit _t1 ms t2), cs) =
+  ESet.null
+    ( (Subst.ftv t2 `ESet.difference` ms)
+        `ESet.intersection` Subst.atv cs
+    )
+    -- || error ("uhoh, constraint `" ++ show c ++ "` wasn't solvable")

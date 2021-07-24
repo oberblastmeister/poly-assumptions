@@ -46,8 +46,12 @@ default-extensions:
 - LambdaCase
 - EmptyCase
 - BangPatterns
-
+- TypeApplications
+- StandaloneDeriving
+- ScopedTypeVariables
+- RankNTypes
 - TemplateHaskell
+- PatternSynonyms
 
 ghc-options:
   - -Wall

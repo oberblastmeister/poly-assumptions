@@ -11,7 +11,7 @@ import qualified Types.Type as T
 import Prelude hiding (lookup)
 
 newtype Subst = Subst (EnumMap T.Var Type)
-  deriving (Eq)
+  deriving (Show, Eq)
 
 class Substitutable a where
   (@@) :: Subst -> a -> a
