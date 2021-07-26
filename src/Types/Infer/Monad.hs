@@ -39,14 +39,12 @@ import Types.Assumptions (Assumptions)
 import qualified Types.Assumptions as Assumptions
 import Types.Type (Type)
 import qualified Types.Type as T
+import Data.HashSet (HashSet)
 
 type Infer =
-  ( {- ReaderT -}
-    -- (EnumSet T.Var)
-    ( StateT
-        InferState
-        (SupplyT T.Var (Either TypeError))
-    )
+  ( StateT
+      InferState
+      (SupplyT T.Var (Either TypeError))
   )
 
 data InferState = InferState
@@ -57,8 +55,7 @@ data InferState = InferState
   deriving (Show)
 
 type MonadInfer m =
-  ( -- MonadReader (EnumSet T.Var) m,
-    MonadSupply T.Var m,
+  ( MonadSupply T.Var m,
     MonadError TypeError m,
     MonadState InferState m
   )
@@ -73,7 +70,7 @@ data TypeError
 data Constraint
   = ConEqual Type Type
   | ConExplicit Type T.Scheme
-  | ConImplicit Type (EnumSet T.Var) Type
+  | ConImplicit Type (HashSet Type) Type
   deriving (Show, Eq)
 
 instance Pretty Constraint where

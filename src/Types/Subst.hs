@@ -11,6 +11,9 @@ import Types.Infer.Monad (Constraint (..))
 import Types.Type (Type)
 import qualified Types.Type as T
 import Prelude hiding (lookup)
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as HSet
+import Data.Hashable (Hashable)
 
 newtype Subst = Subst (EnumMap T.Var Type)
   deriving (Show, Eq)
@@ -74,8 +77,11 @@ instance Substitutable Constraint where
 instance (Substitutable a, Enum a) => Substitutable (EnumSet a) where
   (@@) = ESet.map . (@@)
 
-instance (Substitutable a) => Substitutable [a] where
-  (@@) = map . (@@)
+instance {-# OVERLAPS #-} (Functor f, Substitutable a) => Substitutable (f a) where
+  (@@) = fmap . (@@)
+
+instance (Eq a, Substitutable a, Hashable a) => Substitutable (HashSet a) where
+  (@@) = HSet.map . (@@)
 
 class FreeTypeVars a where
   ftv :: a -> EnumSet T.Var
@@ -95,6 +101,9 @@ instance FreeTypeVars T.Scheme where
 class ActiveTypeVars a where
   atv :: a -> EnumSet T.Var
 
+instance (FreeTypeVars a, Foldable f) => FreeTypeVars (f a) where
+  ftv = foldr (ESet.union . ftv) ESet.empty
+
 instance (Enum a, FreeTypeVars a) => FreeTypeVars (EnumSet a) where
   ftv = ESet.foldr (ESet.union . ftv) ESet.empty
 
@@ -103,7 +112,7 @@ instance (FreeTypeVars a) => FreeTypeVars [a] where
 
 instance ActiveTypeVars Constraint where
   atv (ConEqual t1 t2) = ftv t1 `ESet.union` ftv t2
-  atv (ConImplicit t1 ms t2) = ftv t1 `ESet.union` (ms `ESet.intersection` ftv t2)
+  atv (ConImplicit t1 ms t2) = ftv t1 `ESet.union` (ftv ms `ESet.intersection` ftv t2)
   atv (ConExplicit t s) = ftv t `ESet.union` ftv s
 
 instance ActiveTypeVars a => ActiveTypeVars [a] where

@@ -28,7 +28,7 @@ solve' (ConEqual t1 t2, cs) = do
   su2 <- solve (su1 @@ cs)
   return $ su2 <> su1
 solve' (ConImplicit t1 ms t2, cs) =
-  solve (ConExplicit t1 (dbg' "generalized type" (generalize ms t2)) : cs)
+  solve (ConExplicit t1 (dbg' "generalized type" (generalize (Subst.ftv ms) t2)) : cs)
 solve' (ConExplicit t s, cs) = do
   s' <- dbg' "instantiated type" <$> instantiate s
   solve (dbg' "solving after instantiate" (ConEqual t s' : cs))
@@ -54,7 +54,7 @@ solvable (ConEqual {}, _) = True
 solvable (ConExplicit {}, _) = True
 solvable (c@(ConImplicit _t1 ms t2), cs) =
   let res = ESet.null
-          ( (Subst.ftv t2 `ESet.difference` ms)
+          ( (Subst.ftv t2 `ESet.difference` Subst.ftv ms)
               `ESet.intersection` Subst.atv cs
           )
     in

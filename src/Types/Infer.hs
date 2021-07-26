@@ -22,6 +22,7 @@ import Types.Subst (Subst, Substitutable ((@@)))
 import qualified Types.Subst as Subst
 import Types.Type (Type)
 import qualified Types.Type as T
+import Data.Functor ((<&>))
 
 inferExpr :: (MonadError TypeError m, MonadSupply T.Var m) => Expr -> m T.Scheme
 inferExpr = inferType >=> (\(_, t) -> return $ closeOver t)
@@ -87,8 +88,9 @@ infer expr = do
       (t2, st) <- infer e2 & listenState
       let !_ = dbg $ "in let: inferred body: " ++ show t2
       vs <- gets _boundVars
+      let vsSet = ESet.toList vs <&> T.Var & HSet.fromList
       removeAssumptions x st
-        & (`addConstraints` [ConImplicit t' vs t1 | t' <- lookupAssumptions x st])
+        & (`addConstraints` [ConImplicit t' vsSet t1 | t' <- lookupAssumptions x st])
         & put
       return t2
     Expr.Bin e1 op e2 -> do

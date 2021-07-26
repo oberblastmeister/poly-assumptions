@@ -60,6 +60,7 @@ library
       BangPatterns
       TypeApplications
       StandaloneDeriving
+      DeriveGeneric
       ScopedTypeVariables
       RankNTypes
       TemplateHaskell
@@ -105,6 +106,7 @@ executable poly-assumptions-exe
       BangPatterns
       TypeApplications
       StandaloneDeriving
+      DeriveGeneric
       ScopedTypeVariables
       RankNTypes
       TemplateHaskell
@@ -155,6 +157,7 @@ test-suite poly-assumptions-test
       BangPatterns
       TypeApplications
       StandaloneDeriving
+      DeriveGeneric
       ScopedTypeVariables
       RankNTypes
       TemplateHaskell

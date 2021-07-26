@@ -28,9 +28,11 @@ import Prettyprinter (Doc, Pretty, pretty, (<+>))
 import qualified Prettyprinter as P
 import qualified Prettyprinter.Render.Text as P.Render.Text
 import Prelude hiding (lookup, map)
+import Data.Hashable (Hashable)
+import GHC.Generics (Generic)
 
 newtype Var = VarId {unVarId :: Int}
-  deriving (Show, Eq, Enum, Pretty)
+  deriving (Show, Eq, Enum, Pretty, Hashable)
 
 ppRawVar :: Var -> Doc ann
 ppRawVar (VarId i) = pretty i
@@ -39,7 +41,9 @@ data Type
   = Con Text
   | Var Var
   | Type :-> Type
-  deriving (Eq)
+  deriving (Eq, Generic)
+
+instance Hashable Type
 
 instance Show Type where
   show t =
