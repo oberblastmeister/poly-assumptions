@@ -59,6 +59,12 @@ spec = parallel $ do
       "let rec fib = \\x -> if x == 0 then 0 else if x == 1 then 1 else fib (x - 1) + fib (x - 2) in fib",
       Ok "Int -> Int"
     )
+  describe "ski combinators" $ do
+    t ("s", "\\x y z -> (x z)(y z)", Ok "forall a b c. (a -> b -> c) -> (a -> b) -> a -> c")
+    t ("k", "\\x y -> x", Ok "forall a b. a -> b -> a")
+    t ("i", "\\x -> x", Ok idTy)
+  -- t ("y combinator", "let rec y = \\f -> (\\x -> y f (x x)) (\\x -> y f (x x)) in y", Ok "")
+  -- t ("y combinator no let", "\\f -> (\\x -> f (x x)) (\\x -> f (x x))", Ok "")
   where
     idTy = "forall a. a -> a"
 
