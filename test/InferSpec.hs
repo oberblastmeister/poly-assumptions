@@ -1,43 +1,50 @@
 module InferSpec (spec) where
 
-import Control.Monad.Except
 import Control.Monad.Supply
-import Data.Either (fromLeft)
 import Data.Either.Combinators
 import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.Text (Text)
 import qualified Parser
 import qualified Prettyprinter as P
 import qualified Prettyprinter.Render.Text as P.Render.Text
-import Syntax.Expr (Expr)
-import qualified Syntax.Expr as Expr
 import Test.Hspec
 import qualified Types.Infer as Infer
 import Types.Infer.Monad (TypeError, varSupply)
-import Types.Type (Type)
 import qualified Types.Type as T
 
-testInferExpr :: Expr -> Either TypeError T.Scheme
-testInferExpr e = runExcept $ evalSupplyT (Infer.inferExpr e) varSupply
-
-check :: HasCallStack => String -> Text -> Expectation
+check :: HasCallStack => String -> Either TypeError Text -> Expectation
 check s expected = do
   let ex = fromRight' $ Parser.parseExpr s
-  let !ty = fromRight' $ runSupplyT (Infer.inferExpr ex) varSupply
-  let !actual = P.pretty ty & P.layoutPretty P.defaultLayoutOptions & P.Render.Text.renderStrict
-  "" `shouldBe` expected
+  let ty_res :: Either TypeError T.Scheme
+      ty_res = Infer.inferExpr ex & (`evalSupplyT` varSupply)
+  let actual = P.pretty <$> ty_res <&> P.layoutPretty P.defaultLayoutOptions <&> P.Render.Text.renderStrict
+  actual `shouldBe` expected
 
-test :: HasCallStack => (String, String, Text) -> SpecWith (Arg Expectation)
+test :: HasCallStack => (String, String, Either TypeError Text) -> SpecWith (Arg Expectation)
 test (name, s, expected) = it name (check s expected)
 
-tests :: HasCallStack => [(String, String, Text)] -> SpecWith (Arg Expectation)
-tests = mapM_ test
+pattern Ok :: b -> Either a b
+pattern Ok x = Right x
+
+pattern Err :: a -> Either a b
+pattern Err x = Left x
 
 spec :: Spec
 spec = parallel $ do
-  it "" $ do
-    1 `shouldBe` 1
-  
-  -- it "should work" $ do
-  --   check "1234" "Int"
-  -- test ("", "1234", "a -> a")
+  let
+    t :: HasCallStack => _
+    t = test
+  t ("id", "let id = \\x -> x in id", Ok idTy)
+  t ("id'", "let x = \\y -> y in x", Ok idTy)
+  t ("id'", "let id' = \\x -> let y = x in y in id'", Ok idTy)
+  t ("apply", "let apply = \\f x -> f x in apply", Ok "forall a b. (a -> b) -> a -> b")
+  t ("apply twice", "\\f x -> f x x", Ok "forall a b. (a -> a -> b) -> a -> b")
+  t ("apply twice other", "\\x -> \\y -> let z = x y in z y", Ok "forall a b. (a -> a -> b) -> a -> b")
+  t ("compose", "\\f g x -> f (g x)", Ok "forall a b c. (b -> c) -> (a -> b) -> a -> c")
+  where
+    idTy = "forall a. a -> a"
+
+-- it "should work" $ do
+--   check "1234" "Int"
+-- test ("", "1234", "a -> a")

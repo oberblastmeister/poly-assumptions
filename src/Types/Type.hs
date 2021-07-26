@@ -5,12 +5,14 @@ module Types.Type
     bool,
     var,
     Var (..),
+    prettyRaw,
     everywhere,
     everything,
   )
 where
 
 import Control.Monad (replicateM)
+import Control.Monad.Identity (runIdentity)
 import Control.Monad.State
 import Control.Monad.Supply
 import Data.EnumMap (EnumMap)
@@ -22,18 +24,29 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Debugging
 import Pretty (parensIf)
-import Prettyprinter (Pretty, pretty, (<+>))
+import Prettyprinter (Doc, Pretty, pretty, (<+>))
 import qualified Prettyprinter as P
+import qualified Prettyprinter.Render.Text as P.Render.Text
 import Prelude hiding (lookup, map)
 
 newtype Var = VarId {unVarId :: Int}
   deriving (Show, Eq, Enum, Pretty)
 
+ppRawVar :: Var -> Doc ann
+ppRawVar (VarId i) = pretty i
+
 data Type
   = Con Text
   | Var Var
   | Type :-> Type
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Type where
+  show t =
+    prettyRaw t
+      & P.layoutPretty P.defaultLayoutOptions
+      & P.Render.Text.renderStrict
+      & T.unpack
 
 isArr :: Type -> Bool
 isArr (_ :-> _) = True
@@ -44,34 +57,28 @@ varNameSupply = T.pack <$> ([1 ..] >>= flip replicateM ['a' .. 'z'])
 
 prettyWith ::
   forall m ann.
-  (MonadState (EnumMap Var Text) m, MonadSupply Text m) =>
+  Monad m =>
+  (Var -> m (Doc ann)) ->
   Type ->
   m (P.Doc ann)
-prettyWith = \case
+prettyWith ppVar = \case
   Con name -> return $ pretty name
-  Var v -> pretty <$> lookupVar v
+  Var v -> ppVar v
   t1 :-> t2 -> do
     t1' <- parensIfArr t1
-    t2' <- prettyWith t2
+    t2' <- prettyWith ppVar t2
     return $ t1' <+> "->" <+> t2'
   where
-    parensIfArr t = prettyWith t <&> parensIf (isArr t)
-
-    lookupVar :: Var -> m Text
-    lookupVar v = do
-      map <- get
-      case EMap.lookup v map of
-        Just name -> return name
-        Nothing -> do
-          name <- supply
-          put $ EMap.insert v name map
-          return name
+    parensIfArr t = prettyWith ppVar t <&> parensIf (isArr t)
 
 instance Pretty Type where
   pretty x =
-    prettyWith x
+    prettyWith ppLookupVar x
       & (`evalStateT` EMap.empty)
       & (`evalSupply` varNameSupply)
+
+prettyRaw :: Type -> P.Doc ann
+prettyRaw t = prettyWith (return . ppRawVar) t & runIdentity
 
 infixr 9 :->
 
@@ -103,11 +110,25 @@ instance Pretty Scheme where
           EMap.lookup v map
 
       (doc, map) =
-        prettyWith t
+        prettyWith ppLookupVar t
           & (`runStateT` mapStart)
           & (`evalSupply` varNameSupply)
 
       mapStart = EMap.fromList $ zip as varNameSupply
+
+ppLookupVar ::
+  forall m ann.
+  (MonadState (EnumMap Var Text) m, MonadSupply Text m) =>
+  Var ->
+  m (Doc ann)
+ppLookupVar v = do
+  map <- get
+  case EMap.lookup v map of
+    Just name -> return $ pretty name
+    Nothing -> do
+      name <- supply
+      put $ EMap.insert v name map
+      return $ pretty name
 
 -- smart constructors
 var :: Int -> Type

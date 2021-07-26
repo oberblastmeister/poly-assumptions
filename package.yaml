@@ -52,6 +52,7 @@ default-extensions:
 - RankNTypes
 - TemplateHaskell
 - PatternSynonyms
+- PartialTypeSignatures
 
 ghc-options:
   - -Wall

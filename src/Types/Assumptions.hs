@@ -20,6 +20,7 @@ import Types.Type (Type)
 import Prelude hiding (lookup)
 
 newtype Assumptions = Assumptions (HashMap Text (Seq Type))
+  deriving (Show)
 
 empty :: Assumptions
 empty = Assumptions HMap.empty

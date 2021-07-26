@@ -11,6 +11,7 @@ import qualified Types.Subst as Subst
 import Types.Type (Type)
 import qualified Types.Type as T
 import Types.Unify (unify)
+import Debugging
 
 type MonadSolve m = (MonadError TypeError m)
 
@@ -19,15 +20,18 @@ solve [] = return Subst.empty
 solve cs = solve' $ nextSolvable cs
 
 solve' :: (MonadError TypeError m, MonadSupply T.Var m) => (Constraint, [Constraint]) -> m Subst
+solve' a | dbg' ("solving " ++ show a) False = undefined
 solve' (ConEqual t1 t2, cs) = do
+  let !_ = dbg $ "cs: " ++ show cs
   su1 <- unify t1 t2
+  let !_ = dbg $ "su1: " ++ show su1
   su2 <- solve (su1 @@ cs)
   return $ su2 <> su1
 solve' (ConImplicit t1 ms t2, cs) =
-  solve (ConExplicit t1 (generalize ms t2) : cs)
+  solve (ConExplicit t1 (dbg' "generalized type" (generalize ms t2)) : cs)
 solve' (ConExplicit t s, cs) = do
-  s' <- instantiate s
-  solve (ConEqual t s' : cs)
+  s' <- dbg' "instantiated type" <$> instantiate s
+  solve (dbg' "solving after instantiate" (ConEqual t s' : cs))
 
 instantiate :: MonadSupply T.Var m => T.Scheme -> m Type
 instantiate (T.Forall as t) = do
@@ -41,16 +45,19 @@ generalize free t = T.Forall as t
     as = ESet.toList $ Subst.ftv t `ESet.difference` free
 
 nextSolvable :: [Constraint] -> (Constraint, [Constraint])
-nextSolvable xs = fromJust (find solvable chosen)
+nextSolvable xs = fromJust (find solvable $ chooseOne xs)
   where
-    chosen = [(x, ys) | x <- xs, let ys = delete x xs]
+    chooseOne xs' = [(x, ys) | x <- xs, let ys = delete x xs']
 
 solvable :: (Constraint, [Constraint]) -> Bool
 solvable (ConEqual {}, _) = True
 solvable (ConExplicit {}, _) = True
 solvable (c@(ConImplicit _t1 ms t2), cs) =
-  ESet.null
-    ( (Subst.ftv t2 `ESet.difference` ms)
-        `ESet.intersection` Subst.atv cs
-    )
+  let res = ESet.null
+          ( (Subst.ftv t2 `ESet.difference` ms)
+              `ESet.intersection` Subst.atv cs
+          )
+    in
+    let !_ = dbg $ "con implicit solvable? " ++ show res
+     in res
     -- || error ("uhoh, constraint `" ++ show c ++ "` wasn't solvable")

@@ -29,6 +29,7 @@ library
       Data.Either.Combinators
       Debugging
       Desugar
+      Instances
       Lexer
       Parser
       Pretty
@@ -63,6 +64,7 @@ library
       RankNTypes
       TemplateHaskell
       PatternSynonyms
+      PartialTypeSignatures
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-tools:
       alex
@@ -107,6 +109,7 @@ executable poly-assumptions-exe
       RankNTypes
       TemplateHaskell
       PatternSynonyms
+      PartialTypeSignatures
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:
       alex
@@ -156,6 +159,7 @@ test-suite poly-assumptions-test
       RankNTypes
       TemplateHaskell
       PatternSynonyms
+      PartialTypeSignatures
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:
       alex

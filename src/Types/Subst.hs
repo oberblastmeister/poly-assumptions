@@ -5,6 +5,8 @@ import qualified Data.EnumMap as EMap
 import Data.EnumSet (EnumSet)
 import qualified Data.EnumSet as ESet
 import Data.Maybe
+import Prettyprinter (Pretty (pretty), (<+>))
+import qualified Prettyprinter as P
 import Types.Infer.Monad (Constraint (..))
 import Types.Type (Type)
 import qualified Types.Type as T
@@ -13,11 +15,33 @@ import Prelude hiding (lookup)
 newtype Subst = Subst (EnumMap T.Var Type)
   deriving (Show, Eq)
 
-class Substitutable a where
-  (@@) :: Subst -> a -> a
-
 instance Substitutable Subst where
   (Subst s1) @@ (Subst s2) = Subst $ EMap.map (Subst s1 @@) s2
+
+instance Semigroup Subst where
+  (<>) = compose
+
+instance Monoid Subst where
+  mappend = (<>)
+  mempty = empty
+
+instance Pretty Subst where
+  pretty (Subst s) =
+    P.vsep
+      [ "{",
+        P.indent
+          4
+          ( P.vsep $
+              P.punctuate
+                P.comma
+                ( [pretty k <+> "-->" <+> T.prettyRaw v | (k, v) <- EMap.toAscList s]
+                )
+          ),
+        "}"
+      ]
+
+class Substitutable a where
+  (@@) :: Subst -> a -> a
 
 instance Substitutable Type where
   su @@ t =
@@ -28,22 +52,24 @@ instance Substitutable Type where
       )
       t
 
+instance Substitutable T.Var where
+  su @@ v = case fromMaybe (T.Var v) (lookup su v) of
+    T.Var v' -> v'
+    _ -> v
+
+-- where
+--   t = T.Var a
+--   (T.Var tv) = EMap.findWithDefault t a s
+
 instance Substitutable T.Scheme where
   (Subst s) @@ (T.Forall as t) = T.Forall as $ s' @@ t
     where
       s' = Subst $ foldr EMap.delete s as
 
-instance Semigroup Subst where
-  (<>) = compose
-
-instance Monoid Subst where
-  mappend = (<>)
-  mempty = empty
-
 instance Substitutable Constraint where
   s @@ (ConEqual t1 t2) = ConEqual (s @@ t1) (s @@ t2)
   s @@ (ConExplicit t sc) = ConExplicit (s @@ t) (s @@ sc)
-  s @@ (ConImplicit t1 ms t2) = ConImplicit (s @@ t1) ms (s @@ t2)
+  s @@ (ConImplicit t1 ms t2) = ConImplicit (s @@ t1) (s @@ ms) (s @@ t2)
 
 instance (Substitutable a, Enum a) => Substitutable (EnumSet a) where
   (@@) = ESet.map . (@@)
