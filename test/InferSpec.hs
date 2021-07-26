@@ -30,6 +30,7 @@ pattern Ok x = Right x
 pattern Err :: a -> Either a b
 pattern Err x = Left x
 
+-- TODO: need to figure out why must alpha rename
 spec :: Spec
 spec = parallel $ do
   let
@@ -41,7 +42,13 @@ spec = parallel $ do
   t ("apply", "let apply = \\f x -> f x in apply", Ok "forall a b. (a -> b) -> a -> b")
   t ("apply twice", "\\f x -> f x x", Ok "forall a b. (a -> a -> b) -> a -> b")
   t ("apply twice other", "\\x -> \\y -> let z = x y in z y", Ok "forall a b. (a -> a -> b) -> a -> b")
+  t ("apply twice other not alpha renamed", "\\x -> \\y -> let x = x y in x y", Ok "forall a b. (a -> a -> b) -> a -> b")
   t ("compose", "\\f g x -> f (g x)", Ok "forall a b c. (b -> c) -> (a -> b) -> a -> c")
+  t ("apply with let inside", "\\x -> let y = \\z -> x(z) in y", Ok "forall a b. (a -> b) -> a -> b")
+  t ("const with let inside", "\\x -> let y = \\z -> x in y", Ok "forall a b. a -> b -> a")
+  t ("complicated without alpha renaming", "\\x -> \\y -> let x = x(y) in \\x -> y(x)", Ok "forall a b c. ((a -> b) -> c) -> (a -> b) -> a -> b")
+  -- TODO: need to fix the vars not correct
+  t ("complicated with alpha renaming", "\\x -> \\y -> let z = x(y) in \\w -> y(z)", Ok "forall a b c. ((a -> b) -> c) -> (a -> b) -> a -> b")
   where
     idTy = "forall a. a -> a"
 
