@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 module InferSpec (spec) where
 
 import Control.Monad.Supply
@@ -10,7 +12,7 @@ import qualified Prettyprinter as P
 import qualified Prettyprinter.Render.Text as P.Render.Text
 import Test.Hspec
 import qualified Types.Infer as Infer
-import Types.Infer.Monad (TypeError, varSupply)
+import Types.Infer.Monad (TypeError (InfiniteType), varSupply)
 import qualified Types.Type as T
 
 check :: HasCallStack => String -> Either TypeError Text -> Expectation
@@ -33,9 +35,8 @@ pattern Err x = Left x
 -- TODO: need to figure out why must alpha rename
 spec :: Spec
 spec = parallel $ do
-  let
-    t :: HasCallStack => _
-    t = test
+  let t :: HasCallStack => _
+      t = test
   t ("id", "let id = \\x -> x in id", Ok idTy)
   t ("id'", "let x = \\y -> y in x", Ok idTy)
   t ("id'", "let id' = \\x -> let y = x in y in id'", Ok idTy)
@@ -49,6 +50,15 @@ spec = parallel $ do
   t ("complicated without alpha renaming", "\\x -> \\y -> let x = x(y) in \\x -> y(x)", Ok "forall a b c. ((a -> b) -> c) -> (a -> b) -> a -> b")
   -- TODO: need to fix the vars not correct
   t ("complicated with alpha renaming", "\\x -> \\y -> let z = x(y) in \\w -> y(z)", Ok "forall a b c. ((a -> b) -> c) -> (a -> b) -> a -> b")
+  t ("recursive types", "\\x -> let y = x in y(y)", Err $ InfiniteType (T.VarId 4) (T.Var (T.VarId 4) T.:-> T.Var (T.VarId 5)))
+  t ("simple if", "\\z x y -> let u = if z x then x else y in u", Ok "forall a. (a -> Bool) -> a -> a -> a")
+  t ("recursive", "let y = x in let x = y in x", Ok "")
+  t ("recursive to itself", "let x = x in x", Ok "forall a. a")
+  t
+    ( "fibonacci",
+      "let rec fib = \\x -> if x == 0 then 0 else if x == 1 then 1 else fib (x - 1) + fib (x - 2) in fib",
+      Ok "Int -> Int"
+    )
   where
     idTy = "forall a. a -> a"
 

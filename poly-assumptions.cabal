@@ -29,11 +29,11 @@ library
       Data.Either.Combinators
       Debugging
       Desugar
-      Instances
       Lexer
       Parser
       Pretty
       Protolude
+      Resolve
       Syntax.Expr
       Syntax.Token
       Types.Assumptions

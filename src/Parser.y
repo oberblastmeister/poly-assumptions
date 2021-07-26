@@ -31,12 +31,17 @@ import qualified Syntax.Token as Tok
     true { Tok.True }
     false { Tok.False }
     in { Tok.In }
+    if { Tok.If }
+    else { Tok.Else }
+    then { Tok.Then }
     num { Tok.Num $$ }
     ident { Tok.Ident $$ }
     con_ident { Tok.ConIdent $$ }
     '\\' { Tok.Lambda }
     '->' { Tok.Arrow }
-    '=' { Tok.Eq }
+    '=' { Tok.Assign }
+    '==' { Tok.Eq }
+    '!=' { Tok.NEq }
     '+' { Tok.Add }
     '-' { Tok.Sub }
     '*' { Tok.Mul }
@@ -48,10 +53,16 @@ import qualified Syntax.Token as Tok
 %%
 
 Expr
-  : AddExpr { $1 }
+  : EqExpr { $1 }
   | let ident '=' Expr in Expr { Expr.Let Expr.NonRec $2 $4 $6 }
   | let rec ident '=' Expr in Expr { Expr.Let Expr.Rec $3 $5 $7 }
+  | if Expr then Expr else Expr { Expr.If $2 $4 $6 }
   | '\\' ListE1(ident) '->' Expr { foldr Expr.Lam $4 $2 }
+
+EqExpr
+  : AddExpr { $1 }
+  | AddExpr '==' AddExpr { Expr.Bin $1 Expr.Eq $3 }
+  | AddExpr '!=' AddExpr { Expr.Bin $1 Expr.NEq $3 }
 
 AddExpr
   : MulExpr { $1 }

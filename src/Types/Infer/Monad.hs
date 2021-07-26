@@ -65,6 +65,7 @@ data TypeError
   | TypeMismatchMulti [Type] [Type]
   | InfiniteType T.Var Type
   | UnboundVariable Text
+  | UnsolvableConstraints [Constraint]
   deriving (Show, Eq)
 
 data Constraint

@@ -5,7 +5,7 @@ import Control.Monad.Supply
 import Data.EnumSet (EnumSet)
 import qualified Data.EnumSet as ESet
 import Protolude
-import Types.Infer.Monad (Constraint (..), TypeError, freshT)
+import Types.Infer.Monad (Constraint (..), TypeError(UnsolvableConstraints), freshT)
 import Types.Subst (Subst, Substitutable ((@@)))
 import qualified Types.Subst as Subst
 import Types.Type (Type)
@@ -17,7 +17,7 @@ type MonadSolve m = (MonadError TypeError m)
 
 solve :: (MonadError TypeError m, MonadSupply T.Var m) => [Constraint] -> m Subst
 solve [] = return Subst.empty
-solve cs = solve' $ nextSolvable cs
+solve cs = solve' =<< nextSolvable cs
 
 solve' :: (MonadError TypeError m, MonadSupply T.Var m) => (Constraint, [Constraint]) -> m Subst
 solve' a | dbg' ("solving " ++ show a) False = undefined
@@ -44,11 +44,17 @@ generalize free t = T.Forall as t
   where
     as = ESet.toList $ Subst.ftv t `ESet.difference` free
 
-nextSolvable :: [Constraint] -> (Constraint, [Constraint])
-nextSolvable xs = fromJust (find solvable $ chooseOne xs)
+nextSolvable :: MonadError TypeError m => [Constraint] -> m (Constraint, [Constraint])
+nextSolvable xs =
+  case find solvable $ chooseOne xs of
+    Nothing -> throwError $ UnsolvableConstraints xs
+    Just res -> return res
   where
     chooseOne xs' = [(x, ys) | x <- xs, let ys = delete x xs']
 
+-- This makes sure that we don't solve ConExplicit first when it is not solvable.
+-- Solving ConExplicit to early is bad because it is generalizing to early when the
+-- substitutions haven't been fully made yet
 solvable :: (Constraint, [Constraint]) -> Bool
 solvable (ConEqual {}, _) = True
 solvable (ConExplicit {}, _) = True

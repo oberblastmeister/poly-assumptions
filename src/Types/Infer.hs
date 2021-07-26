@@ -2,13 +2,12 @@ module Types.Infer where
 
 import Control.Arrow (second)
 import Control.Monad.Except
-import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Supply
 import qualified Data.DList as DL
 import qualified Data.EnumSet as ESet
-import qualified Data.EnumSet as EnumSet
 import Data.Function ((&))
+import Data.Functor ((<&>))
 import qualified Data.HashSet as HSet
 import Debugging
 import Lens.Micro ((%~))
@@ -22,7 +21,6 @@ import Types.Subst (Subst, Substitutable ((@@)))
 import qualified Types.Subst as Subst
 import Types.Type (Type)
 import qualified Types.Type as T
-import Data.Functor ((<&>))
 
 inferExpr :: (MonadError TypeError m, MonadSupply T.Var m) => Expr -> m T.Scheme
 inferExpr = inferType >=> (\(_, t) -> return $ closeOver t)
@@ -62,7 +60,7 @@ infer expr = do
     Expr.Lit l -> return $ litTy l
     Expr.Var x -> do
       tv <- freshT
-      let !_ = dbg $ "added asumption " ++ show x ++ " -> " ++ show tv
+      let !_ = dbg $ "added assumption " ++ show x ++ " -> " ++ show tv
       modify $ addAssumption (x, tv)
       return tv
     Expr.Lam x e -> do
@@ -85,7 +83,7 @@ infer expr = do
     Expr.Let _rk x e1 e2 -> do
       t1 <- infer e1
       let !_ = dbg $ "in let: inferred val: " ++ show t1
-      (t2, st) <- infer e2 & listenState
+      (t2, st) <- infer e2 & takeState
       let !_ = dbg $ "in let: inferred body: " ++ show t2
       vs <- gets _boundVars
       let vsSet = ESet.toList vs <&> T.Var & HSet.fromList

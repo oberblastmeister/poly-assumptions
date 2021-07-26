@@ -30,11 +30,16 @@ tokens :-
   "let" { tok Tok.Let }
   "rec" { tok Tok.Rec }
   "in" { tok Tok.In }
+  "if" { tok Tok.If }
+  "then" { tok Tok.Then }
+  "else" { tok Tok.Else }
   "True" { tok Tok.True }
   "False" { tok Tok.False }
   $digit+ { string $ Tok.Num . read }
   "->" { tok Tok.Arrow }
-  "=" { tok Tok.Eq }
+  "=" { tok Tok.Assign }
+  "==" { tok Tok.Eq }
+  "!=" { tok Tok.NEq }
   $lam { tok Tok.Lambda }
   "+" { tok Tok.Add }
   "-" { tok Tok.Sub }

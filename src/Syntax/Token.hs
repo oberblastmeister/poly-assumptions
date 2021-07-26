@@ -9,16 +9,21 @@ data Token
   | True
   | False
   | In
+  | If
+  | Else
+  | Then
   | Lambda
   | Num Int
   | Ident Text
   | ConIdent Text
   | Arrow
-  | Eq
+  | Assign
   | Add
   | Sub
   | Mul
   | Div
+  | Eq
+  | NEq
   | LParen
   | RParen
   | Dot
