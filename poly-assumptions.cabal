@@ -78,8 +78,7 @@ library
     , enummapset
     , hashable
     , haskeline
-    , microlens
-    , microlens-th
+    , microlens-platform
     , mtl
     , prettyprinter
     , text
@@ -124,8 +123,7 @@ executable poly-assumptions-exe
     , enummapset
     , hashable
     , haskeline
-    , microlens
-    , microlens-th
+    , microlens-platform
     , mtl
     , poly-assumptions
     , prettyprinter
@@ -176,8 +174,7 @@ test-suite poly-assumptions-test
     , hashable
     , haskeline
     , hspec
-    , microlens
-    , microlens-th
+    , microlens-platform
     , mtl
     , poly-assumptions
     , prettyprinter

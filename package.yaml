@@ -30,8 +30,7 @@ dependencies:
 - mtl
 - transformers
 - enummapset
-- microlens
-- microlens-th
+- microlens-platform
 - prettyprinter
 - haskeline
 

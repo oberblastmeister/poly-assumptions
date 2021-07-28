@@ -6,11 +6,10 @@ import Control.Monad.State
 import Control.Monad.Supply
 import qualified Data.DList as DL
 import qualified Data.EnumSet as ESet
-import Data.Function ((&))
-import Data.Functor ((<&>))
+import Data.Foldable (toList)
 import qualified Data.HashSet as HSet
 import Debugging
-import Lens.Micro ((%~))
+import Lens.Micro.Platform
 import Protolude
 import Syntax.Expr (Expr)
 import qualified Syntax.Expr as Expr
@@ -61,7 +60,7 @@ infer expr = do
     Expr.Var x -> do
       tv <- freshT
       let !_ = dbg $ "added assumption " ++ show x ++ " -> " ++ show tv
-      modify $ addAssumption (x, tv)
+      assumptions %= (`As.add` (x, tv))
       return tv
     Expr.Lam x e -> do
       v <- freshV
@@ -69,15 +68,20 @@ infer expr = do
       let tv = T.Var v
       (t, st) <- localState (boundVars %~ ESet.insert v) (takeState $ infer e)
       let !_ = dbg $ "inferred lam body: " ++ show t
-      removeAssumptions x st
-        & (`addConstraints` [ConEqual t' tv | t' <- lookupAssumptions x st])
+      st
+        & assumptions %~ (`As.remove` x)
+        & constraints
+          %~ ( `DL.append`
+                 DL.fromList
+                   [ConEqual t' tv | t' <- st ^. assumptions & As.lookup x & toList]
+             )
         & put
       return $ tv T.:-> t
     Expr.App e1 e2 -> do
       t1 <- infer e1
       t2 <- infer e2
       tv <- freshT
-      modify $ addConstraint $ ConEqual t1 (t2 T.:-> tv)
+      constraints %= (`DL.snoc` ConEqual t1 (t2 T.:-> tv))
       let !_ = dbg $ "inferred app: " ++ show tv
       return tv
     Expr.Let _rk x e1 e2 -> do
@@ -87,8 +91,13 @@ infer expr = do
       let !_ = dbg $ "in let: inferred body: " ++ show t2
       vs <- gets _boundVars
       let vsSet = ESet.toList vs <&> T.Var & HSet.fromList
-      removeAssumptions x st
-        & (`addConstraints` [ConImplicit t' vsSet t1 | t' <- lookupAssumptions x st])
+      st
+        & assumptions %~ (`As.remove` x)
+        & constraints
+          %~ ( `DL.append`
+                 DL.fromList
+                   [ConImplicit t' vsSet t1 | t' <- st ^. assumptions & As.lookup x & toList]
+             )
         & put
       return t2
     Expr.Bin e1 op e2 -> do
@@ -97,14 +106,14 @@ infer expr = do
       tv <- freshT
       let u1 = t1 T.:-> t2 T.:-> tv
           u2 = ops op
-      modify $ addConstraint $ ConEqual u1 u2
+      constraints %= (`DL.snoc` ConEqual u1 u2)
       return tv
     Expr.If cond e1 e2 -> do
       t1 <- infer cond
-      modify $ addConstraint $ ConEqual t1 T.bool
+      constraints %= (`DL.snoc` ConEqual t1 T.bool)
       t2 <- infer e1
       t3 <- infer e2
-      modify $ addConstraint $ ConEqual t2 t3
+      constraints %= (`DL.snoc` ConEqual t2 t3)
       return t2
     _ -> error "nyi"
 

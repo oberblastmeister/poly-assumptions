@@ -5,14 +5,9 @@ module Types.Infer.Monad
     constraints,
     boundVars,
     Infer,
-    runInfer,
     TypeError (..),
     Constraint (..),
-    addConstraint,
-    addConstraints,
-    removeAssumptions,
-    lookupAssumptions,
-    addAssumption,
+    -- lookupAssumptions,
     freshV,
     freshT,
     varSupply,
@@ -30,16 +25,14 @@ import Data.DList (DList)
 import qualified Data.DList as DL
 import Data.EnumSet (EnumSet)
 import qualified Data.EnumSet as ESet
-import Data.Foldable (toList)
-import Lens.Micro ((%~), (&))
-import Lens.Micro.TH
+import Data.HashSet (HashSet)
+import Lens.Micro.Platform
 import Prettyprinter (Pretty (pretty), (<+>))
 import Protolude
 import Types.Assumptions (Assumptions)
 import qualified Types.Assumptions as Assumptions
 import Types.Type (Type)
 import qualified Types.Type as T
-import Data.HashSet (HashSet)
 
 type Infer =
   ( StateT
@@ -110,35 +103,6 @@ listenState m = do
   put s
   return (a, s)
 
-runInfer :: (MonadError TypeError m) => Infer a -> m (a, InferState)
-runInfer m =
-  liftEither $
-    evalSupplyT
-      ( runStateT
-          m
-          -- (runReaderT m EnumSet.empty)
-          defInferState
-      )
-      varSupply
-
-addConstraints :: InferState -> [Constraint] -> InferState
-addConstraints st cs =
-  st & constraints %~ (`DL.append` DL.fromList cs)
-
-addConstraint :: Constraint -> InferState -> InferState
-addConstraint c =
-  constraints %~ (`DL.snoc` c)
-
-removeAssumptions :: Text -> InferState -> InferState
-removeAssumptions n =
-  assumptions %~ (`Assumptions.remove` n)
-
-addAssumption :: (Text, Type) -> InferState -> InferState
-addAssumption a = assumptions %~ (`Assumptions.add` a)
-
-lookupAssumptions :: Text -> InferState -> [Type]
-lookupAssumptions x = toList . Assumptions.lookup x . _assumptions
-
 localState :: forall s m a. MonadState s m => (s -> s) -> m a -> m a
 localState f action = do
   orig <- get
@@ -146,15 +110,3 @@ localState f action = do
   a <- action
   put orig
   return a
-
--- withModifyState :: forall s m a. MonadState InferState m => (s -> s) -> m a -> m a
--- withModifyState f action = do
---   st <- get
---   withState (f st) action
-
--- | have the monomorphic variable inside of the monomorphic set locally for this computation
--- withBoundVar :: MonadState InferState m => T.Var -> m a -> m a
--- withBoundVar v = localState (
-
--- withMVar :: MonadReader (EnumSet T.Var) m => T.Var -> m a -> m a
--- withMVar v = local (EnumSet.insert v)

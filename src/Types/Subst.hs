@@ -4,6 +4,9 @@ import Data.EnumMap (EnumMap)
 import qualified Data.EnumMap as EMap
 import Data.EnumSet (EnumSet)
 import qualified Data.EnumSet as ESet
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as HSet
+import Data.Hashable (Hashable)
 import Data.Maybe
 import Prettyprinter (Pretty (pretty), (<+>))
 import qualified Prettyprinter as P
@@ -11,9 +14,6 @@ import Types.Infer.Monad (Constraint (..))
 import Types.Type (Type)
 import qualified Types.Type as T
 import Prelude hiding (lookup)
-import Data.HashSet (HashSet)
-import qualified Data.HashSet as HSet
-import Data.Hashable (Hashable)
 
 newtype Subst = Subst (EnumMap T.Var Type)
   deriving (Show, Eq)
@@ -55,15 +55,6 @@ instance Substitutable Type where
       )
       t
 
-instance Substitutable T.Var where
-  su @@ v = case fromMaybe (T.Var v) (lookup su v) of
-    T.Var v' -> v'
-    _ -> v
-
--- where
---   t = T.Var a
---   (T.Var tv) = EMap.findWithDefault t a s
-
 instance Substitutable T.Scheme where
   (Subst s) @@ (T.Forall as t) = T.Forall as $ s' @@ t
     where
@@ -98,25 +89,19 @@ instance FreeTypeVars Type where
 instance FreeTypeVars T.Scheme where
   ftv (T.Forall as t) = ftv t `ESet.difference` ESet.fromList as
 
+instance (FreeTypeVars a, Foldable f) => FreeTypeVars (f a) where
+  ftv = foldMap ftv
+
 class ActiveTypeVars a where
   atv :: a -> EnumSet T.Var
-
-instance (FreeTypeVars a, Foldable f) => FreeTypeVars (f a) where
-  ftv = foldr (ESet.union . ftv) ESet.empty
-
-instance (Enum a, FreeTypeVars a) => FreeTypeVars (EnumSet a) where
-  ftv = ESet.foldr (ESet.union . ftv) ESet.empty
-
-instance (FreeTypeVars a) => FreeTypeVars [a] where
-  ftv = foldr (ESet.union . ftv) ESet.empty
 
 instance ActiveTypeVars Constraint where
   atv (ConEqual t1 t2) = ftv t1 `ESet.union` ftv t2
   atv (ConImplicit t1 ms t2) = ftv t1 `ESet.union` (ftv ms `ESet.intersection` ftv t2)
   atv (ConExplicit t s) = ftv t `ESet.union` ftv s
 
-instance ActiveTypeVars a => ActiveTypeVars [a] where
-  atv = foldr (ESet.union . atv) ESet.empty
+instance (Foldable f, ActiveTypeVars a) => ActiveTypeVars (f a) where
+  atv = foldMap atv
 
 compose :: Subst -> Subst -> Subst
 su1@(Subst s1) `compose` su2@(Subst _) =
