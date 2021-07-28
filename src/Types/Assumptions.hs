@@ -10,12 +10,14 @@ module Types.Assumptions
   )
 where
 
+import Data.Function ((&))
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HMap
 import Data.HashSet (HashSet)
+import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
-import Protolude
+import Data.Text (Text)
 import Types.Type (Type)
 import Prelude hiding (lookup)
 
@@ -29,10 +31,10 @@ remove :: Assumptions -> Text -> Assumptions
 remove (Assumptions m) var = Assumptions $ HMap.delete var m
 
 lookup :: Text -> Assumptions -> Seq Type
-lookup key (Assumptions m) = HMap.lookup key m |> fromMaybe Seq.empty
+lookup key (Assumptions m) = HMap.lookup key m & fromMaybe Seq.empty
 
 add :: Assumptions -> (Text, Type) -> Assumptions
-add (Assumptions m) (n, t) = HMap.insert n (ts Seq.|> t) m |> Assumptions
+add (Assumptions m) (n, t) = HMap.insert n (ts Seq.|> t) m & Assumptions
   where
     ts = HMap.lookupDefault Seq.empty n m
 

@@ -10,7 +10,6 @@ import Data.Foldable (toList)
 import qualified Data.HashSet as HSet
 import Debugging
 import Lens.Micro.Platform
-import Protolude
 import Syntax.Expr (Expr)
 import qualified Syntax.Expr as Expr
 import qualified Types.Assumptions as As
@@ -33,7 +32,7 @@ inferType ex = do
   let !_ = dbg @String "inferred type"
   let !_ = dbgP' T.prettyRaw t
   let unbounds = As.keys $ _assumptions st
-  unless (HSet.null unbounds) $ throwError $ UnboundVariable (HSet.toList unbounds |> head)
+  unless (HSet.null unbounds) $ throwError $ UnboundVariable (HSet.toList unbounds & head)
   let !_ = dbg' "constraints" $ DL.toList $ _constraints st
   subst <- Solve.solve $ DL.toList $ _constraints st
   let !_ = dbgP subst
@@ -71,10 +70,8 @@ infer expr = do
       st
         & assumptions %~ (`As.remove` x)
         & constraints
-          %~ ( `DL.append`
-                 DL.fromList
-                   [ConEqual t' tv | t' <- st ^. assumptions & As.lookup x & toList]
-             )
+          <>~ DL.fromList
+            [ConEqual t' tv | t' <- st ^. assumptions & As.lookup x & toList]
         & put
       return $ tv T.:-> t
     Expr.App e1 e2 -> do
@@ -94,10 +91,8 @@ infer expr = do
       st
         & assumptions %~ (`As.remove` x)
         & constraints
-          %~ ( `DL.append`
-                 DL.fromList
-                   [ConImplicit t' vsSet t1 | t' <- st ^. assumptions & As.lookup x & toList]
-             )
+          <>~ DL.fromList
+            [ConImplicit t' vsSet t1 | t' <- st ^. assumptions & As.lookup x & toList]
         & put
       return t2
     Expr.Bin e1 op e2 -> do

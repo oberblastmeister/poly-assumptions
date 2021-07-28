@@ -28,11 +28,11 @@ import qualified Data.EnumSet as ESet
 import Data.HashSet (HashSet)
 import Lens.Micro.Platform
 import Prettyprinter (Pretty (pretty), (<+>))
-import Protolude
 import Types.Assumptions (Assumptions)
 import qualified Types.Assumptions as Assumptions
 import Types.Type (Type)
 import qualified Types.Type as T
+import Data.Text (Text)
 
 type Infer =
   ( StateT

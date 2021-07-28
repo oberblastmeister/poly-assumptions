@@ -3,7 +3,6 @@ module Lexer (
   scanTokens
 ) where
 
-import Protolude
 import qualified Syntax.Token as Tok
 import qualified Data.Text as T
 import Syntax.Token (Token)

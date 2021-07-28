@@ -4,7 +4,6 @@ import Control.Monad.Except
 import Control.Monad.Supply
 import Data.EnumSet (EnumSet)
 import qualified Data.EnumSet as ESet
-import Protolude
 import Types.Infer.Monad (Constraint (..), TypeError(UnsolvableConstraints), freshT)
 import Types.Subst (Subst, Substitutable ((@@)))
 import qualified Types.Subst as Subst
@@ -12,6 +11,8 @@ import Types.Type (Type)
 import qualified Types.Type as T
 import Types.Unify (unify)
 import Debugging
+import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 
 type MonadSolve m = (MonadError TypeError m)
 
@@ -46,11 +47,11 @@ generalize free t = T.Forall as t
 
 nextSolvable :: MonadError TypeError m => [Constraint] -> m (Constraint, [Constraint])
 nextSolvable xs =
-  case find solvable $ chooseOne xs of
+  case Foldable.find solvable $ chooseOne xs of
     Nothing -> throwError $ UnsolvableConstraints xs
     Just res -> return res
   where
-    chooseOne xs' = [(x, ys) | x <- xs, let ys = delete x xs']
+    chooseOne xs' = [(x, ys) | x <- xs, let ys = List.delete x xs']
 
 -- This makes sure that we don't solve ConExplicit first when it is not solvable.
 -- Solving ConExplicit to early is bad because it is generalizing to early when the

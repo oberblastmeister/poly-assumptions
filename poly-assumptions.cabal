@@ -32,7 +32,6 @@ library
       Lexer
       Parser
       Pretty
-      Protolude
       Resolve
       Syntax.Expr
       Syntax.Token

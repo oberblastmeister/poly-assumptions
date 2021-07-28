@@ -10,7 +10,7 @@ where
 import Pretty
 import Prettyprinter (Doc, Pretty, pretty, (<+>))
 import qualified Prettyprinter as P
-import Protolude
+import Data.Text (Text)
 
 type Name = Text
 
