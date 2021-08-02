@@ -53,6 +53,9 @@ default-extensions:
 - TemplateHaskell
 - PatternSynonyms
 - PartialTypeSignatures
+- NamedFieldPuns
+- DuplicateRecordFields
+- DataKinds
 
 ghc-options:
   - -Wall

@@ -11,8 +11,15 @@ import Syntax.Expr (Expr)
 import qualified Syntax.Expr as Expr
 import qualified Types.Type as T
 import Types.Type (Type)
-import Syntax.Token (Token)
-import qualified Syntax.Token as Tok
+import Syntax.Token (Token(..))
+import qualified Syntax.Token.Kind as TK
+import LexerWrapper (runAlex)
+import Data.Function ((&))
+import Data.Text (Text)
+import ParserWrapper
+import Data.Either.Combinators (mapLeft)
+import Control.Monad.Except
+import qualified LexerWrapper
 }
 
 %name expr Expr
@@ -20,44 +27,44 @@ import qualified Syntax.Token as Tok
 %name scheme Scheme
 
 %tokentype { Token }
-%monad { Either String } { (>>=) } { return }
+%monad { Either ParseError } { (>>=) } { return }
 %error { parseError }
 
 -- Token Names
 %token
-    forall { Tok.Forall }
-    let { Tok.Let }
-    rec { Tok.Rec }
-    true { Tok.True }
-    false { Tok.False }
-    in { Tok.In }
-    if { Tok.If }
-    else { Tok.Else }
-    then { Tok.Then }
-    num { Tok.Num $$ }
-    ident { Tok.Ident $$ }
-    con_ident { Tok.ConIdent $$ }
-    '\\' { Tok.Lambda }
-    '->' { Tok.Arrow }
-    '=' { Tok.Assign }
-    '==' { Tok.Eq }
-    '!=' { Tok.NEq }
-    '+' { Tok.Add }
-    '-' { Tok.Sub }
-    '*' { Tok.Mul }
-    '/' { Tok.Div }
-    '(' { Tok.LParen }
-    ')' { Tok.RParen }
-    '.' { Tok.Dot }
+    forall { Token TK.Forall _ }
+    let { Token TK.Let _ }
+    rec { Token TK.Rec _ }
+    true { Token TK.True _ }
+    false { Token TK.False _ }
+    in { Token TK.In _ }
+    if { Token TK.If _ }
+    else { Token TK.Else _ }
+    then { Token TK.Then _ }
+    num { Token (TK.Num _) _ }
+    ident { Token (TK.Ident _) _ }
+    con_ident { Token (TK.ConIdent _) _ }
+    '\\' { Token TK.Lambda _ }
+    '->' { Token TK.Arrow _ }
+    '=' { Token TK.Assign _ }
+    '==' { Token TK.Eq _ }
+    '!=' { Token TK.NEq _ }
+    '+' { Token TK.Add _ }
+    '-' { Token TK.Sub _ }
+    '*' { Token TK.Mul _ }
+    '/' { Token TK.Div _ }
+    '(' { Token TK.LParen _ }
+    ')' { Token TK.RParen _ }
+    '.' { Token TK.Dot _ }
 
 %%
 
 Expr
   : EqExpr { $1 }
-  | let ident '=' Expr in Expr { Expr.Let Expr.NonRec $2 $4 $6 }
-  | let rec ident '=' Expr in Expr { Expr.Let Expr.Rec $3 $5 $7 }
+  | let ident '=' Expr in Expr { Expr.Let Expr.NonRec (getIdent $2) $4 $6 }
+  | let rec ident '=' Expr in Expr { Expr.Let Expr.Rec (getIdent $3) $5 $7 }
   | if Expr then Expr else Expr { Expr.If $2 $4 $6 }
-  | '\\' ListE1(ident) '->' Expr { foldr Expr.Lam $4 $2 }
+  | '\\' ListE1(ident) '->' Expr { foldr Expr.Lam $4 (fmap getIdent $2) }
 
 EqExpr
   : AddExpr { $1 }
@@ -80,8 +87,8 @@ AppExpr
 
 AtomExpr
   : '(' Expr ')' { $2 }
-  | num { Expr.Lit (Expr.LInt $1) }
-  | ident { Expr.Var $1 }
+  | num { Expr.Lit $ Expr.LInt $ getNum $1 }
+  | ident { Expr.Var $ getIdent $1 }
   | true { Expr.Lit (Expr.LBool True) }
   | false { Expr.Lit (Expr.LBool False) }
 
@@ -97,35 +104,49 @@ ArrowType
 
 AtomType
   : '(' Ty ')' { $2 }
-  | con_ident { T.Con $1 }
+  | con_ident { T.Con (getIdent $1) }
 
 -- | A non-empty list with no separator
 ListE1(p)
      : p                { [$1] }
      | p ListE1(p)      { $1 : $2 }
 {
-parseError :: [Token] -> Either String a
-parseError (l:ls) = Left $ "Unexpected token: " ++ show l
-parseError [] = Left "Unexpected end of Input"
+getNum :: Token -> Int
+getNum tok = case kind tok of
+  TK.Num x -> x
+  _ -> error "cannot get number from this token"
 
-type Lexer = String -> Either String [Token]
+getIdent :: Token -> Text
+getIdent tok = case kind tok of
+  TK.Ident x -> x
+  TK.ConIdent x -> x
+  _ -> error "cannot get ident from this token"
+  
+getIdents :: [Token] -> [Text]
+getIdents = fmap getIdent
+  
+parseError :: [Token] -> Either ParseError a
+parseError (l:ls) = Left $ ParseError $ "Unexpected token: " ++ show l
+parseError [] = Left $ ParseError "Unexpected end of Input"
 
-type Parser a = [Token] -> Either String a
+-- type Lexer = String -> Either String [Token]
 
-parse :: Parser a -> String -> Either String a
-parse parser input = do
-  tokenStream <- scanTokens input
+type Parser a = [Token] -> Either ParseError a
+
+parse :: MonadError ParseError m => Parser a -> Text -> m a
+parse parser input = liftEither $ do
+  tokenStream <- runAlex input lexTokens & mapLeft LexError
   parser tokenStream
 
-parseExpr :: String -> Either String Expr
+parseExpr :: MonadError ParseError m => Text -> m Expr
 parseExpr = parse expr
 
-parseType :: String -> Either String Type
+parseType :: MonadError ParseError m => Text -> m Type
 parseType = parse ty
 
-parseScheme :: String -> Either String T.Scheme
+parseScheme :: MonadError ParseError m => Text -> m T.Scheme
 parseScheme = parse scheme
 
-parseTokens :: String -> Either String [Token]
-parseTokens = scanTokens
+parseTokens :: Text -> Either [LexerWrapper.LexError] [Token]
+parseTokens input = runAlex input lexTokens
 }

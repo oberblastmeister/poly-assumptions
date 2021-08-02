@@ -86,7 +86,7 @@ infer expr = do
       let !_ = dbg $ "in let: inferred val: " ++ show t1
       (t2, st) <- infer e2 & takeState
       let !_ = dbg $ "in let: inferred body: " ++ show t2
-      vs <- gets _boundVars
+      vs <- use boundVars
       let vsSet = ESet.toList vs <&> T.Var & HSet.fromList
       st
         & assumptions %~ (`As.remove` x)

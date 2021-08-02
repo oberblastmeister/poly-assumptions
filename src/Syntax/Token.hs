@@ -1,30 +1,8 @@
 module Syntax.Token where
 
+import Data.Span
 import Data.Text (Text)
+import Syntax.Token.Kind (TokenKind)
 
-data Token
-  = Let
-  | Rec
-  | Forall
-  | True
-  | False
-  | In
-  | If
-  | Else
-  | Then
-  | Lambda
-  | Num Int
-  | Ident Text
-  | ConIdent Text
-  | Arrow
-  | Assign
-  | Add
-  | Sub
-  | Mul
-  | Div
-  | Eq
-  | NEq
-  | LParen
-  | RParen
-  | Dot
+data Token = Token {kind :: TokenKind, span :: Span}
   deriving (Show, Eq)

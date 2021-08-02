@@ -1,6 +1,7 @@
 module PrettySpec (spec) where
 
 import Data.Either.Combinators
+import Data.Text (Text)
 import Data.Function ((&))
 import qualified Data.Text as T
 import qualified Parser
@@ -8,17 +9,17 @@ import qualified Prettyprinter as P
 import qualified Prettyprinter.Render.Text as P.Render.Text
 import Test.Hspec
 
-checkSame :: String -> Expectation
+checkSame :: Text -> Expectation
 checkSame s = do
   let expr = fromRight' $ Parser.parseExpr s
   let actual = P.pretty expr & P.layoutCompact & P.Render.Text.renderStrict
-  T.pack s `shouldBe` actual
+  s `shouldBe` actual
 
-checkSameTy :: String -> Expectation
+checkSameTy :: Text -> Expectation
 checkSameTy s = do
   let ty = fromRight' $ Parser.parseType s
   let actual = P.pretty ty & P.layoutCompact & P.Render.Text.renderStrict
-  T.pack s `shouldBe` actual
+  s `shouldBe` actual
 
 spec :: Spec
 spec = parallel $ do

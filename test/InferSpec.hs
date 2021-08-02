@@ -15,7 +15,7 @@ import qualified Types.Infer as Infer
 import Types.Infer.Monad (TypeError (InfiniteType), varSupply)
 import qualified Types.Type as T
 
-check :: HasCallStack => String -> Either TypeError Text -> Expectation
+check :: HasCallStack => Text -> Either TypeError Text -> Expectation
 check s expected = do
   let ex = fromRight' $ Parser.parseExpr s
   let ty_res :: Either TypeError T.Scheme
@@ -23,7 +23,7 @@ check s expected = do
   let actual = P.pretty <$> ty_res <&> P.layoutPretty P.defaultLayoutOptions <&> P.Render.Text.renderStrict
   actual `shouldBe` expected
 
-test :: HasCallStack => (String, String, Either TypeError Text) -> SpecWith (Arg Expectation)
+test :: HasCallStack => (String, Text, Either TypeError Text) -> SpecWith (Arg Expectation)
 test (name, s, expected) = it name (check s expected)
 
 pattern Ok :: b -> Either a b

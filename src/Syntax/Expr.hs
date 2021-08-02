@@ -4,6 +4,7 @@ module Syntax.Expr
     BinOp (..),
     RecKind(..),
     everywhere,
+    mkLam,
   )
 where
 
@@ -91,3 +92,10 @@ data Lit
 instance Pretty Lit where
   pretty (LInt i) = pretty i
   pretty (LBool b) = pretty b
+
+-- toText :: [Token] -> Text
+-- toText ts = f <$> ts
+--   where
+--     f ()
+mkLam :: [Text] -> Expr -> Expr
+mkLam xs e = foldr Lam e xs

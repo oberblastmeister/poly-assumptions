@@ -11,7 +11,6 @@ module Types.Type
   )
 where
 
-import Control.Monad (replicateM)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.State
 import Control.Monad.Supply
@@ -19,17 +18,16 @@ import Data.EnumMap (EnumMap)
 import qualified Data.EnumMap as EMap
 import Data.Function ((&))
 import Data.Functor ((<&>))
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Hashable (Hashable)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Debugging
+import GHC.Generics (Generic)
 import Pretty (parensIf)
 import Prettyprinter (Doc, Pretty, pretty, (<+>))
 import qualified Prettyprinter as P
 import qualified Prettyprinter.Render.Text as P.Render.Text
 import Prelude hiding (lookup, map)
-import Data.Hashable (Hashable)
-import GHC.Generics (Generic)
 
 newtype Var = VarId {unVarId :: Int}
   deriving (Show, Eq, Enum, Pretty, Hashable)

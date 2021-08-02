@@ -27,14 +27,18 @@ library
   exposed-modules:
       Control.Monad.Supply
       Data.Either.Combinators
+      Data.Span
       Debugging
       Desugar
       Lexer
+      LexerWrapper
       Parser
+      ParserWrapper
       Pretty
       Resolve
       Syntax.Expr
       Syntax.Token
+      Syntax.Token.Kind
       Types.Assumptions
       Types.Infer
       Types.Infer.Monad
@@ -42,6 +46,7 @@ library
       Types.Subst
       Types.Type
       Types.Unify
+      UTF8
   other-modules:
       Paths_poly_assumptions
   hs-source-dirs:
@@ -65,6 +70,9 @@ library
       TemplateHaskell
       PatternSynonyms
       PartialTypeSignatures
+      NamedFieldPuns
+      DuplicateRecordFields
+      DataKinds
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-tools:
       alex
@@ -110,6 +118,9 @@ executable poly-assumptions-exe
       TemplateHaskell
       PatternSynonyms
       PartialTypeSignatures
+      NamedFieldPuns
+      DuplicateRecordFields
+      DataKinds
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:
       alex
@@ -160,6 +171,9 @@ test-suite poly-assumptions-test
       TemplateHaskell
       PatternSynonyms
       PartialTypeSignatures
+      NamedFieldPuns
+      DuplicateRecordFields
+      DataKinds
   ghc-options: -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tools:
       alex
