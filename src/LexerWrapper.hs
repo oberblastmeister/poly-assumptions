@@ -6,7 +6,7 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
-import Data.DList
+import Data.DList (DList)
 import qualified Data.DList as DL
 import Data.Function ((&))
 import Data.Maybe (fromJust)

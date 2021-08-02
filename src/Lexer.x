@@ -1,5 +1,5 @@
 {
-module Lexer where
+module Lexer (lexTokens) where
 
 import LexerWrapper
 import Syntax.Token (Token(..))

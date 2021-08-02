@@ -1,4 +1,4 @@
-module Syntax.Token.Kind where
+module Syntax.Token.Kind (TokenKind (..)) where
 
 import Data.Text (Text)
 
