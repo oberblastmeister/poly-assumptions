@@ -14,6 +14,9 @@ import Control.Monad.Reader
 import Control.Monad.Writer 
 import Data.Function ((&))
 import qualified Data.DList as DL
+import qualified Data.Text.Lazy.Builder as TLB
+import qualified Data.Text.Lazy as TL
+import Control.Monad.State
 }
 
 $digit = 0-9
@@ -56,17 +59,54 @@ tokens :-
   <0> $lower $ident* { string $ TK.Ident }
   <0> $upper $ident* { string $ TK.ConIdent }
   
+  <0> "\"" { undefined }
+  <stringSC> \\ a { appendChar '\a' }
+  <stringSC> \\ t { appendChar '\t' }
+  <stringSC> \\ n { appendChar '\n' }
+  <stringSC> \\ r { appendChar '\r' }
+  <stringSC> \\ \\ { appendChar '\\' }
+  -- <stringSC> \\ . { invalidEscape }
+  <stringSC> "\"" { undefined }
+
   <0> .
     { do
         tokText <- asks tokText
         span <- asks $ getField @"span"
         tell $ DL.singleton $ LexError (UnknownToken tokText) span
-        return $ Token TK.Error span
+        skip
     }
   
 {
 skip :: AlexAction Token
 skip = lift $ alexMonadScan
+
+beginString, endString :: AlexAction Token
+beginString = begin stringSC 
+endString = do
+  failed <- gets stringFailed
+  strContents <- gets $ TL.toStrict . TLB.toLazyText . stringBuf
+  modify $ \st -> st{stringBuf = TLB.fromText "", stringFailed = False}
+  lift $ alexSetStartCode 0
+  sp <- asks $ getField @"span"
+  return $ if failed
+    then Token TK.Error sp
+    else Token (TK.Str strContents) sp
+      
+invalidEscape :: Char -> AlexAction Token
+invalidEscape c = do
+  undefined 
+  -- sp <- asks $ getField @"span"
+  -- lift $ tell $ DL.singleton $ LexError InvalidEscape sp
+  -- skip
+  
+appendChar :: Char -> AlexAction Token
+appendChar c = do
+  failed <- gets stringFailed
+  if failed
+    then skip
+    else do
+      modify $ \st -> st { stringBuf = stringBuf st <> TLB.singleton c }
+      skip
 
 begin :: Int -> AlexAction Token
 begin sc = lift $ do

@@ -3,7 +3,6 @@ module PrettySpec (spec) where
 import Data.Either.Combinators
 import Data.Text (Text)
 import Data.Function ((&))
-import qualified Data.Text as T
 import qualified Parser
 import qualified Prettyprinter as P
 import qualified Prettyprinter.Render.Text as P.Render.Text

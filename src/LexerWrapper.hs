@@ -1,7 +1,7 @@
 module LexerWrapper where
 
 import Control.Arrow (second)
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
@@ -13,6 +13,7 @@ import Data.Maybe (fromJust)
 import Data.Span
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy.Builder as TLB
 import Data.Word (Word8)
 import GHC.Records
 import Syntax.Token (Token (..))
@@ -37,6 +38,7 @@ alexMove SourcePos {line, col} _ = SourcePos {line, col = col + 1}
 
 data ErrorKind
   = UnknownToken Text
+  | InvalidEscape
   deriving (Show, Eq)
 
 -- data Error
@@ -54,7 +56,9 @@ data AlexState = AlexState
     chr :: !Char,
     bytes :: [Word8],
     scd :: !Int, -- the current startcode
-    errors :: DList LexError
+    errors :: DList LexError,
+    stringBuf :: TLB.Builder,
+    stringFailed :: Bool
   }
 
 newtype Alex a = Alex {unAlex :: (StateT AlexState Identity) a}
@@ -91,7 +95,9 @@ defaultAlexState text =
       text,
       chr = '\n',
       scd = 0,
-      errors = DL.empty
+      errors = DL.empty,
+      stringBuf = TLB.fromText "",
+      stringFailed = False
     }
 
 -- These two functions are needed for alex to work
@@ -139,6 +145,6 @@ tk kind = asks (Token kind . (getField @"span"))
 
 string :: (Text -> TokenKind) -> AlexAction Token
 string f = do
-  span <- asks $ getField @"span"
+  sp <- asks $ getField @"span"
   kind <- asks $ f . tokText
-  return $ Token kind span
+  return $ Token kind sp

@@ -29,6 +29,7 @@ dependencies:
 - text
 - mtl
 - transformers
+- transformers
 - enummapset
 - microlens-platform
 - prettyprinter

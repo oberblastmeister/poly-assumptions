@@ -14,6 +14,7 @@ data TokenKind
   | Then
   | Lambda
   | Num Int
+  | Str Text
   | Ident Text
   | ConIdent Text
   | Arrow

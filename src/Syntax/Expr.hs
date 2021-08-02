@@ -2,16 +2,15 @@ module Syntax.Expr
   ( Expr (..),
     Lit (..),
     BinOp (..),
-    RecKind(..),
+    RecKind (..),
     everywhere,
-    mkLam,
   )
 where
 
+import Data.Text (Text)
 import Pretty
 import Prettyprinter (Doc, Pretty, pretty, (<+>))
 import qualified Prettyprinter as P
-import Data.Text (Text)
 
 type Name = Text
 
@@ -62,6 +61,7 @@ prettyWith nest = \case
   Lit l -> pretty l
   Bin e1 op e2 -> pretty e1 <+> pretty op <+> pretty e2
   If cond e1 e2 -> "if" <+> pretty cond <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
+  Fix e -> "fix" <+> pretty e
 
 instance Pretty Expr where
   pretty = prettyWith False
@@ -92,10 +92,3 @@ data Lit
 instance Pretty Lit where
   pretty (LInt i) = pretty i
   pretty (LBool b) = pretty b
-
--- toText :: [Token] -> Text
--- toText ts = f <$> ts
---   where
---     f ()
-mkLam :: [Text] -> Expr -> Expr
-mkLam xs e = foldr Lam e xs
